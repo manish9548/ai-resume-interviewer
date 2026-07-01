@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: ai-resume-interviewer
+  datasource:
+    url: jdbc:mysql://localhost:3306/ai_resume_interviewer
+    username: root
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
