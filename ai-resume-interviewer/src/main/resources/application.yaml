@@ -1,6 +1,7 @@
 spring:
   application:
     name: ai-resume-interviewer
+
   datasource:
     url: jdbc:mysql://localhost:3306/ai_resume_interviewer
     username: root
@@ -10,3 +11,7 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+jwt:
+  secret: 1234567890123456789012345678901234567890123456789012345678901234
+  expiration: 86400000

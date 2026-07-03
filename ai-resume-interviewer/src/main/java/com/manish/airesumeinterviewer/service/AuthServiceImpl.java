@@ -3,6 +3,7 @@ package com.manish.airesumeinterviewer.service;
 import com.manish.airesumeinterviewer.dto.LoginRequest;
 import com.manish.airesumeinterviewer.dto.RegisterRequest;
 import com.manish.airesumeinterviewer.entity.User;
+import com.manish.airesumeinterviewer.jwt.JwtService;
 import com.manish.airesumeinterviewer.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 public class AuthServiceImpl implements AuthService{
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     @Override
     public String register (RegisterRequest request){
@@ -36,7 +38,7 @@ public class AuthServiceImpl implements AuthService{
         if(!passwordEncoder.matches(request.getPassword(), user.getPassword())){
             throw new RuntimeException("Invalid Password");
         }
-        return "Login Successfully";
+        return jwtService.generateToken(user.getEmail());
     }
 
 }
