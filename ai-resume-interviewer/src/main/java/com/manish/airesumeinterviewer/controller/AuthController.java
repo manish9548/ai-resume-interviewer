@@ -1,5 +1,6 @@
 package com.manish.airesumeinterviewer.controller;
 
+import com.manish.airesumeinterviewer.dto.LoginRequest;
 import com.manish.airesumeinterviewer.dto.RegisterRequest;
 import com.manish.airesumeinterviewer.service.AuthService;
 import jakarta.validation.Valid;
@@ -19,6 +20,10 @@ public class AuthController {
     public String register(@Valid @RequestBody RegisterRequest request){
         return service.register(request);
 
+    }
+    @PostMapping("/login")
+    public String login(@RequestBody @Valid LoginRequest request){
+        return service.login(request);
     }
 
 }
