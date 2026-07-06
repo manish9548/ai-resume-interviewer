@@ -22,8 +22,26 @@ public class ResumeServiceImpl implements ResumeService {
     private final UserRepository userRepository;
     private final ResumeParser resumeParser;
 
+    private final GeminiService geminiService;
+    private final PromptService promptService;
+
     @Value("${file.upload-dir}")
     private String uploadDir;
+    @Override
+    public String analyzeResume(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User Not Found"));
+
+        Resume resume = resumeRepository.findTopByUserOrderByUploadedAtDesc(user)
+                .orElseThrow(() -> new RuntimeException("Resume Not Found"));
+
+        String extractedText = resume.getExtractedText();
+
+        String prompt = promptService.getResumeAnalysisPrompt(extractedText);
+
+        return geminiService.generateContent(prompt);
+    }
 
     @Override
     public String uploadResume(MultipartFile file, String email)

@@ -9,4 +9,5 @@ public interface ResumeService {
     String uploadResume(MultipartFile file, String email)
             throws IOException;
 
+    String analyzeResume(String email);
 }
