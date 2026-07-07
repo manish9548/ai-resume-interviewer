@@ -4,10 +4,7 @@ package com.manish.airesumeinterviewer.controller;
 import com.manish.airesumeinterviewer.service.ResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -28,5 +25,12 @@ public class ResumeController {
                 authentication.getName()
         );
     }
+    @GetMapping("/analyze")
+    public String analyzeResume(Authentication authentication) {
+
+        return resumeService.analyzeResume(authentication.getName());
+
+    }
 
 }
+
