@@ -19,18 +19,13 @@ public class Interview {
 
     private String interviewType;
 
-    @Column(length = 5000)
-    private String questions;
+    private Integer overallScore;
 
-    @Column(length = 5000)
-    private String answers;
-
-    @Column(length = 5000)
-    private String feedback;
-
-    private Integer score;
+    private String status;
 
     private LocalDateTime createdAt;
+
+    private LocalDateTime completedAt;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

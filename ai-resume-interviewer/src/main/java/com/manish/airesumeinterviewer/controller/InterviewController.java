@@ -1,9 +1,12 @@
 package com.manish.airesumeinterviewer.controller;
 
+import com.manish.airesumeinterviewer.dto.InterviewQuestionResponse;
 import com.manish.airesumeinterviewer.service.InterviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/interview")
@@ -22,5 +25,11 @@ public class InterviewController {
                 type,
                 authentication.getName()
         );
+    }
+    @GetMapping("/{interviewId}/questions")
+    public List<InterviewQuestionResponse> getQuestions(
+            @PathVariable Long interviewId
+    ) {
+        return interviewService.getInterviewQuestions(interviewId);
     }
 }
