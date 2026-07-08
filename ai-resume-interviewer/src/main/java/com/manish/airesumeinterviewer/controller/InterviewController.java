@@ -1,5 +1,6 @@
 package com.manish.airesumeinterviewer.controller;
 
+import com.manish.airesumeinterviewer.dto.AnswerRequest;
 import com.manish.airesumeinterviewer.dto.InterviewQuestionResponse;
 import com.manish.airesumeinterviewer.service.InterviewService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,8 @@ import java.util.List;
 public class InterviewController {
 
     private final InterviewService interviewService;
+
+
 
     @PostMapping("/start")
     public String startInterview(
@@ -31,5 +34,14 @@ public class InterviewController {
             @PathVariable Long interviewId
     ) {
         return interviewService.getInterviewQuestions(interviewId);
+    }
+
+    @PostMapping("/question/{questionId}/answer")
+    public String submitAnswer(
+            @PathVariable Long questionId,
+            @RequestBody AnswerRequest request
+    ){
+        interviewService.submitAnswer(questionId,request.getAnswer());
+        return "Answer Saved Successfully";
     }
 }

@@ -39,6 +39,18 @@ public class InterviewServiceImpl implements InterviewService {
                         .build())
                 .toList();
     }
+    @Override
+    public void submitAnswer(Long questionId, String answer) {
+
+        InterviewQuestion question = interviewQuestionRepository
+                .findById(questionId)
+                .orElseThrow(() -> new RuntimeException("Question not found"));
+
+        question.setAnswer(answer);
+        question.setSkipped(false);
+
+        interviewQuestionRepository.save(question);
+    }
 
     @Override
     public String startInterview(String type, String email) {
