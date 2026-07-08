@@ -2,6 +2,7 @@ package com.manish.airesumeinterviewer.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.manish.airesumeinterviewer.dto.EvaluationResponse;
 import com.manish.airesumeinterviewer.dto.InterviewQuestionResponse;
 import com.manish.airesumeinterviewer.entity.Interview;
 import com.manish.airesumeinterviewer.entity.InterviewQuestion;
@@ -42,12 +43,52 @@ public class InterviewServiceImpl implements InterviewService {
     @Override
     public void submitAnswer(Long questionId, String answer) {
 
-        InterviewQuestion question = interviewQuestionRepository
-                .findById(questionId)
+        InterviewQuestion question = interviewQuestionRepository.findById(questionId)
                 .orElseThrow(() -> new RuntimeException("Question not found"));
 
         question.setAnswer(answer);
-        question.setSkipped(false);
+
+        String prompt = """
+You are an expert technical interviewer.
+
+Evaluate the candidate's answer.
+
+Question:
+%s
+
+Candidate Answer:
+%s
+
+Return ONLY valid JSON.
+
+{
+  "score": 8,
+  "feedback": "Good answer but missing some important points.",
+  "idealAnswer": "A complete answer should explain..."
+}
+
+Do not add markdown.
+Do not add explanation.
+Do not write ```json.
+Return JSON only.
+""".formatted(question.getQuestion(), answer);
+
+        String response = geminiService.generateContent(prompt);
+
+        try {
+
+            EvaluationResponse evaluation = objectMapper.readValue(
+                    response,
+                    EvaluationResponse.class
+            );
+
+            question.setScore(evaluation.getScore());
+            question.setFeedback(evaluation.getFeedback());
+            question.setIdealAnswer(evaluation.getIdealAnswer());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse Gemini response");
+        }
 
         interviewQuestionRepository.save(question);
     }
