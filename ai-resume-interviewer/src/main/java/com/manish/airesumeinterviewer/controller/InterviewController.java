@@ -1,9 +1,6 @@
 package com.manish.airesumeinterviewer.controller;
 
-import com.manish.airesumeinterviewer.dto.AnswerRequest;
-import com.manish.airesumeinterviewer.dto.EvaluationResponse;
-import com.manish.airesumeinterviewer.dto.InterviewQuestionResponse;
-import com.manish.airesumeinterviewer.dto.InterviewResultResponse;
+import com.manish.airesumeinterviewer.dto.*;
 import com.manish.airesumeinterviewer.service.InterviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -57,5 +54,11 @@ public class InterviewController {
             @PathVariable Long questionId
     ) {
         return interviewService.getEvaluation(questionId);
+    }
+    @GetMapping("/{interviewId}/report")
+    public InterviewReportResponse getInterviewReport(
+            @PathVariable Long interviewId
+    ) {
+        return interviewService.getInterviewReport(interviewId);
     }
 }
