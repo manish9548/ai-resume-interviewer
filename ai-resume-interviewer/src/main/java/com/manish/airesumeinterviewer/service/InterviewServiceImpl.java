@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.manish.airesumeinterviewer.dto.EvaluationResponse;
 import com.manish.airesumeinterviewer.dto.InterviewQuestionResponse;
+import com.manish.airesumeinterviewer.dto.InterviewResultResponse;
 import com.manish.airesumeinterviewer.entity.Interview;
 import com.manish.airesumeinterviewer.entity.InterviewQuestion;
 import com.manish.airesumeinterviewer.entity.User;
@@ -39,6 +40,18 @@ public class InterviewServiceImpl implements InterviewService {
                         .skipped(question.getSkipped())
                         .build())
                 .toList();
+    }
+    @Override
+    public EvaluationResponse getEvaluation(Long questionId) {
+
+        InterviewQuestion question = interviewQuestionRepository.findById(questionId)
+                .orElseThrow(() -> new RuntimeException("Question not found"));
+
+        return EvaluationResponse.builder()
+                .score(question.getScore())
+                .feedback(question.getFeedback())
+                .idealAnswer(question.getIdealAnswer())
+                .build();
     }
     @Override
     public void submitAnswer(Long questionId, String answer) {
@@ -91,6 +104,37 @@ Return JSON only.
         }
 
         interviewQuestionRepository.save(question);
+    }
+    @Override
+    public InterviewResultResponse finishInterview(Long interviewId) {
+
+        Interview interview = interviewRepository.findById(interviewId)
+                .orElseThrow(() -> new RuntimeException("Interview not found"));
+
+        List<InterviewQuestion> questions =
+                interviewQuestionRepository.findByInterviewIdOrderByQuestionNumber(interviewId);
+
+        int totalScore = questions.stream()
+                .mapToInt(q -> q.getScore() == null ? 0 : q.getScore())
+                .sum();
+
+        double percentage = questions.isEmpty()
+                ? 0
+                : (totalScore / (questions.size() * 10.0)) * 100;
+
+        interview.setOverallScore(totalScore);
+        interview.setStatus("COMPLETED");
+        interview.setCompletedAt(LocalDateTime.now());
+
+        interviewRepository.save(interview);
+
+        return InterviewResultResponse.builder()
+                .interviewId(interviewId)
+                .totalScore(totalScore)
+                .totalQuestions(questions.size())
+                .percentage(percentage)
+                .status(interview.getStatus())
+                .build();
     }
 
     @Override

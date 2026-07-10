@@ -1,7 +1,9 @@
 package com.manish.airesumeinterviewer.controller;
 
 import com.manish.airesumeinterviewer.dto.AnswerRequest;
+import com.manish.airesumeinterviewer.dto.EvaluationResponse;
 import com.manish.airesumeinterviewer.dto.InterviewQuestionResponse;
+import com.manish.airesumeinterviewer.dto.InterviewResultResponse;
 import com.manish.airesumeinterviewer.service.InterviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -43,5 +45,17 @@ public class InterviewController {
     ){
         interviewService.submitAnswer(questionId,request.getAnswer());
         return "Answer Saved Successfully";
+    }
+    @PostMapping("/{interviewId}/finish")
+    public InterviewResultResponse finishInterview(
+            @PathVariable Long interviewId
+    ){
+        return interviewService.finishInterview(interviewId);
+    }
+    @GetMapping("/question/{questionId}/evaluation")
+    public EvaluationResponse getEvaluation(
+            @PathVariable Long questionId
+    ) {
+        return interviewService.getEvaluation(questionId);
     }
 }
