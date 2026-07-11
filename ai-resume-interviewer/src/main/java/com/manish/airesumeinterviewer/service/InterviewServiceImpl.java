@@ -75,6 +75,28 @@ public class InterviewServiceImpl implements InterviewService {
                 .build();
     }
     @Override
+    public List<InterviewHistoryResponse> getInterviewHistory(String email) {
+
+        List<Interview> interviews =
+                interviewRepository.findByUserEmailOrderByCreatedAtDesc(email);
+
+        return interviews.stream()
+                .map(interview -> InterviewHistoryResponse.builder()
+                        .interviewId(interview.getId())
+                        .interviewType(interview.getInterviewType())
+                        .totalScore(interview.getOverallScore())
+                        .percentage(
+                                interview.getOverallScore() == null
+                                        ? 0
+                                        : (interview.getOverallScore() / 100.0) * 100
+                        )
+                        .status(interview.getStatus())
+                        .createdAt(interview.getCreatedAt())
+                        .build()
+                )
+                .toList();
+    }
+    @Override
     public void skipQuestion(Long questionId) {
 
         InterviewQuestion question = interviewQuestionRepository.findById(questionId)

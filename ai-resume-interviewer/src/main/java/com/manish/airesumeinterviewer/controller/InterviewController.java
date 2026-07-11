@@ -52,6 +52,14 @@ public class InterviewController {
 
         return "Question Skipped Successfully";
     }
+    @GetMapping("/history")
+    public List<InterviewHistoryResponse> getHistory(
+            Authentication authentication
+    ) {
+        return interviewService.getInterviewHistory(
+                authentication.getName()
+        );
+    }
     @PostMapping("/{interviewId}/finish")
     public InterviewResultResponse finishInterview(
             @PathVariable Long interviewId

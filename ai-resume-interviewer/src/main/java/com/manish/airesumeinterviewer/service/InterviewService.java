@@ -1,9 +1,6 @@
 package com.manish.airesumeinterviewer.service;
 
-import com.manish.airesumeinterviewer.dto.EvaluationResponse;
-import com.manish.airesumeinterviewer.dto.InterviewQuestionResponse;
-import com.manish.airesumeinterviewer.dto.InterviewReportResponse;
-import com.manish.airesumeinterviewer.dto.InterviewResultResponse;
+import com.manish.airesumeinterviewer.dto.*;
 
 import java.util.List;
 
@@ -15,4 +12,5 @@ public interface InterviewService {
     EvaluationResponse getEvaluation(Long questionId);
     InterviewReportResponse getInterviewReport(Long interviewId);
     void skipQuestion(Long questionId);
+    List<InterviewHistoryResponse> getInterviewHistory(String email);
 }
