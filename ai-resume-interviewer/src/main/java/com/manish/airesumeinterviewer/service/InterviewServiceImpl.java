@@ -75,6 +75,20 @@ public class InterviewServiceImpl implements InterviewService {
                 .build();
     }
     @Override
+    public void skipQuestion(Long questionId) {
+
+        InterviewQuestion question = interviewQuestionRepository.findById(questionId)
+                .orElseThrow(() -> new RuntimeException("Question not found"));
+        // agar by chance already submit hai to fir re submit na ho
+        if (question.getAnswer() != null) {
+            throw new RuntimeException("Question already answered");
+        }
+
+        question.setSkipped(true);
+
+        interviewQuestionRepository.save(question);
+    }
+    @Override
     public EvaluationResponse getEvaluation(Long questionId) {
 
         InterviewQuestion question = interviewQuestionRepository.findById(questionId)

@@ -43,6 +43,15 @@ public class InterviewController {
         interviewService.submitAnswer(questionId,request.getAnswer());
         return "Answer Saved Successfully";
     }
+    @PostMapping("/question/{questionId}/skip")
+    public String skipQuestion(
+            @PathVariable Long questionId
+    ) {
+
+        interviewService.skipQuestion(questionId);
+
+        return "Question Skipped Successfully";
+    }
     @PostMapping("/{interviewId}/finish")
     public InterviewResultResponse finishInterview(
             @PathVariable Long interviewId

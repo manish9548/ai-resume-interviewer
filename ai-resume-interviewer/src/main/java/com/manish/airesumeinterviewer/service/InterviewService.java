@@ -14,4 +14,5 @@ public interface InterviewService {
     InterviewResultResponse finishInterview(Long interviewId);
     EvaluationResponse getEvaluation(Long questionId);
     InterviewReportResponse getInterviewReport(Long interviewId);
+    void skipQuestion(Long questionId);
 }
