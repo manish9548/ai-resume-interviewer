@@ -2,9 +2,7 @@ package com.manish.airesumeinterviewer.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.manish.airesumeinterviewer.dto.EvaluationResponse;
-import com.manish.airesumeinterviewer.dto.InterviewQuestionResponse;
-import com.manish.airesumeinterviewer.dto.InterviewResultResponse;
+import com.manish.airesumeinterviewer.dto.*;
 import com.manish.airesumeinterviewer.entity.Interview;
 import com.manish.airesumeinterviewer.entity.InterviewQuestion;
 import com.manish.airesumeinterviewer.entity.User;
@@ -40,6 +38,41 @@ public class InterviewServiceImpl implements InterviewService {
                         .skipped(question.getSkipped())
                         .build())
                 .toList();
+    }
+    @Override
+    public InterviewReportResponse getInterviewReport(Long interviewId) {
+
+        Interview interview = interviewRepository.findById(interviewId)
+                .orElseThrow(() -> new RuntimeException("Interview not found"));
+
+        List<InterviewQuestion> questions =
+                interviewQuestionRepository.findByInterviewIdOrderByQuestionNumber(interviewId);
+
+        List<InterviewReportQuestion> reportQuestions = questions.stream()
+                .map(question -> InterviewReportQuestion.builder()
+                        .questionNumber(question.getQuestionNumber())
+                        .question(question.getQuestion())
+                        .answer(question.getAnswer())
+                        .score(question.getScore())
+                        .feedback(question.getFeedback())
+                        .idealAnswer(question.getIdealAnswer())
+                        .skipped(question.getSkipped())
+                        .build())
+                .toList();
+
+        return InterviewReportResponse.builder()
+                .interviewId(interview.getId())
+                .interviewType(interview.getInterviewType())
+                .totalScore(interview.getOverallScore())
+                .percentage(
+                        questions.isEmpty()
+                                ? 0
+                                : (interview.getOverallScore() * 100.0)
+                                / (questions.size() * 10)
+                )
+                .status(interview.getStatus())
+                .questions(reportQuestions)
+                .build();
     }
     @Override
     public EvaluationResponse getEvaluation(Long questionId) {
