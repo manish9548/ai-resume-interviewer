@@ -8,6 +8,7 @@ import com.manish.airesumeinterviewer.entity.InterviewQuestion;
 import com.manish.airesumeinterviewer.entity.User;
 import com.manish.airesumeinterviewer.repository.InterviewQuestionRepository;
 import com.manish.airesumeinterviewer.repository.InterviewRepository;
+import com.manish.airesumeinterviewer.repository.ResumeRepository;
 import com.manish.airesumeinterviewer.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class InterviewServiceImpl implements InterviewService {
     private final UserRepository userRepository;
     private final GeminiService geminiService;
     private final ObjectMapper objectMapper;
+    private final ResumeRepository resumeRepository;
     @Override
     public List<InterviewQuestionResponse> getInterviewQuestions(Long interviewId) {
 
@@ -112,6 +114,10 @@ public class InterviewServiceImpl implements InterviewService {
     }
     @Override
     public DashboardResponse getDashboard(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        long totalResumes = resumeRepository.countByUser(user);
 
         List<Interview> interviews =
                 interviewRepository.findByUserEmailOrderByCreatedAtDesc(email);
@@ -139,6 +145,7 @@ public class InterviewServiceImpl implements InterviewService {
                 : interviews.get(0).getInterviewType();
 
         return DashboardResponse.builder()
+                .totalResumes(totalResumes)
                 .totalInterviews(totalInterviews)
                 .completedInterviews(completedInterviews)
                 .averageScore(averageScore)

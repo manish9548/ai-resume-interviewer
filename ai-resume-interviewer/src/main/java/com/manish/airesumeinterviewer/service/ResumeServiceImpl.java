@@ -1,5 +1,6 @@
 package com.manish.airesumeinterviewer.service;
 
+import com.manish.airesumeinterviewer.dto.ResumeHistoryResponse;
 import com.manish.airesumeinterviewer.entity.Resume;
 import com.manish.airesumeinterviewer.entity.User;
 import com.manish.airesumeinterviewer.parser.ResumeParser;
@@ -13,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +43,22 @@ public class ResumeServiceImpl implements ResumeService {
         String prompt = promptService.getResumeAnalysisPrompt(extractedText);
 
         return geminiService.generateContent(prompt);
+    }
+    @Override
+    public List<ResumeHistoryResponse> getResumeHistory(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return resumeRepository
+                .findByUserOrderByUploadedAtDesc(user)
+                .stream()
+                .map(resume -> ResumeHistoryResponse.builder()
+                        .id(resume.getId())
+                        .fileName(resume.getFileName())
+                        .uploadedAt(resume.getUploadedAt())
+                        .build())
+                .toList();
     }
 
     @Override

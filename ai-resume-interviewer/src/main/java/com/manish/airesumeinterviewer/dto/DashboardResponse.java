@@ -21,4 +21,6 @@ public class DashboardResponse {
 
     private String latestInterviewType;
 
+    private long totalResumes;
+
 }
