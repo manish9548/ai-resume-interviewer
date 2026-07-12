@@ -78,4 +78,12 @@ public class InterviewController {
     ) {
         return interviewService.getInterviewReport(interviewId);
     }
+    @GetMapping("/dashboard")
+    public DashboardResponse getDashboard(
+            Authentication authentication
+    ) {
+        return interviewService.getDashboard(
+                authentication.getName()
+        );
+    }
 }

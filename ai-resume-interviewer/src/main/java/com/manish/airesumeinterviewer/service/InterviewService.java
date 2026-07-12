@@ -13,4 +13,5 @@ public interface InterviewService {
     InterviewReportResponse getInterviewReport(Long interviewId);
     void skipQuestion(Long questionId);
     List<InterviewHistoryResponse> getInterviewHistory(String email);
+    DashboardResponse getDashboard(String email);
 }

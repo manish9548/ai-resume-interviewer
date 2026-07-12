@@ -111,6 +111,42 @@ public class InterviewServiceImpl implements InterviewService {
         interviewQuestionRepository.save(question);
     }
     @Override
+    public DashboardResponse getDashboard(String email) {
+
+        List<Interview> interviews =
+                interviewRepository.findByUserEmailOrderByCreatedAtDesc(email);
+
+        int totalInterviews = interviews.size();
+
+        int completedInterviews = (int) interviews.stream()
+                .filter(i -> "COMPLETED".equals(i.getStatus()))
+                .count();
+
+        double averageScore = interviews.stream()
+                .filter(i -> i.getOverallScore() != null)
+                .mapToInt(Interview::getOverallScore)
+                .average()
+                .orElse(0.0);
+
+        int bestScore = interviews.stream()
+                .filter(i -> i.getOverallScore() != null)
+                .mapToInt(Interview::getOverallScore)
+                .max()
+                .orElse(0);
+
+        String latestInterviewType = interviews.isEmpty()
+                ? null
+                : interviews.get(0).getInterviewType();
+
+        return DashboardResponse.builder()
+                .totalInterviews(totalInterviews)
+                .completedInterviews(completedInterviews)
+                .averageScore(averageScore)
+                .bestScore(bestScore)
+                .latestInterviewType(latestInterviewType)
+                .build();
+    }
+    @Override
     public EvaluationResponse getEvaluation(Long questionId) {
 
         InterviewQuestion question = interviewQuestionRepository.findById(questionId)
