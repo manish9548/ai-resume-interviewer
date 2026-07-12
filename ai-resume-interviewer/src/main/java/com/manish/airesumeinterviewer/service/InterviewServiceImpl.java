@@ -2,6 +2,7 @@ package com.manish.airesumeinterviewer.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.manish.airesumeinterviewer.dto.*;
 import com.manish.airesumeinterviewer.entity.Interview;
 import com.manish.airesumeinterviewer.entity.InterviewQuestion;
@@ -247,6 +248,96 @@ Return JSON only.
                 .percentage(percentage)
                 .status(interview.getStatus())
                 .build();
+    }
+    @Override
+    public OverallFeedbackResponse getOverallFeedback(Long interviewId) {
+
+        Interview interview = interviewRepository.findById(interviewId)
+                .orElseThrow(() -> new RuntimeException("Interview not found"));
+
+        List<InterviewQuestion> questions =
+                interviewQuestionRepository.findByInterviewIdOrderByQuestionNumber(interviewId);
+        if (questions.isEmpty()) {
+            throw new RuntimeException("No questions found for this interview.");
+        }
+
+        StringBuilder prompt = new StringBuilder();
+
+        prompt.append("""
+You are an expert technical interviewer.
+
+Analyze the complete interview.
+
+Return ONLY valid JSON.
+
+{
+  "overallRating":"Excellent",
+  "summary":"Overall interview summary",
+  "strengths":[
+    "Point 1",
+    "Point 2"
+  ],
+  "weaknesses":[
+    "Point 1",
+    "Point 2"
+  ],
+  "suggestions":[
+    "Point 1",
+    "Point 2"
+  ]
+}
+
+Interview Details:
+
+""");
+
+        for (InterviewQuestion q : questions){
+
+            prompt.append("""
+Question:
+%s
+
+Answer:
+%s
+
+Score:
+%s
+
+""".formatted(
+                    q.getQuestion(),
+                    q.getAnswer(),
+                    q.getScore()
+            ));
+        }
+
+        String response = geminiService.generateContent(prompt.toString());
+
+        response = response
+                .replace("```json", "")
+                .replace("```", "")
+                .trim();
+
+        int start = response.indexOf("{");
+        int end = response.lastIndexOf("}");
+
+        if (start == -1 || end == -1) {
+            throw new RuntimeException("Invalid Gemini response: " + response);
+        }
+
+        response = response.substring(start, end + 1);
+
+        System.out.println(response);
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(response, OverallFeedbackResponse.class);
+
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to parse Gemini response", e);
+        }
+
+
+
     }
 
     @Override

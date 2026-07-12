@@ -86,4 +86,10 @@ public class InterviewController {
                 authentication.getName()
         );
     }
+    @GetMapping("/{interviewId}/overall-feedback")
+    public OverallFeedbackResponse getOverallFeedback(
+            @PathVariable Long interviewId
+    ){
+        return interviewService.getOverallFeedback(interviewId);
+    }
 }
