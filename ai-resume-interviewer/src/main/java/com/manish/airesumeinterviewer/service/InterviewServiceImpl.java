@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.manish.airesumeinterviewer.dto.*;
 import com.manish.airesumeinterviewer.entity.Interview;
 import com.manish.airesumeinterviewer.entity.InterviewQuestion;
+import com.manish.airesumeinterviewer.entity.Resume;
 import com.manish.airesumeinterviewer.entity.User;
 import com.manish.airesumeinterviewer.repository.InterviewQuestionRepository;
 import com.manish.airesumeinterviewer.repository.InterviewRepository;
@@ -165,6 +166,148 @@ public class InterviewServiceImpl implements InterviewService {
                 .feedback(question.getFeedback())
                 .idealAnswer(question.getIdealAnswer())
                 .build();
+    }
+    @Override
+    public ResumeGapAnalysisResponse getResumeGapAnalysis(Long interviewId) {
+
+        // Fetch Interview
+        Interview interview = interviewRepository.findById(interviewId)
+                .orElseThrow(() -> new RuntimeException("Interview not found"));
+
+        // Fetch User
+        User user = interview.getUser();
+
+        // Fetch Latest Resume
+        Resume resume = resumeRepository.findTopByUserOrderByUploadedAtDesc(user)
+                .orElseThrow(() -> new RuntimeException("Resume not found"));
+
+        // Resume Text
+        String resumeText = resume.getExtractedText();
+
+        if (resumeText == null || resumeText.isBlank()) {
+            throw new RuntimeException("Resume text not found");
+        }
+
+        // Interview Questions
+        List<InterviewQuestion> questions =
+                interviewQuestionRepository.findByInterviewIdOrderByQuestionNumber(interviewId);
+
+        if (questions.isEmpty()) {
+            throw new RuntimeException("Interview questions not found");
+        }
+
+        // Prompt
+        StringBuilder prompt = new StringBuilder();
+
+        prompt.append("""
+You are an expert technical interviewer and career mentor.
+
+Compare the candidate's Resume with their Interview Performance.
+
+Analyze:
+1. Skills mentioned in the resume that were demonstrated in the interview.
+2. Skills mentioned in the resume but NOT demonstrated in the interview.
+3. Candidate's strengths.
+4. Personalized improvement plan.
+
+IMPORTANT:
+Return ONLY valid JSON.
+Do NOT use markdown.
+Do NOT wrap the response inside ```json or ```.
+Do NOT write any explanation.
+
+Return exactly in this format:
+
+{
+  "matchedSkills":[
+    "Skill 1",
+    "Skill 2"
+  ],
+  "missingSkills":[
+    "Skill 1",
+    "Skill 2"
+  ],
+  "strengths":[
+    "Point 1",
+    "Point 2"
+  ],
+  "improvementPlan":[
+    "Point 1",
+    "Point 2"
+  ]
+}
+
+Resume:
+
+""");
+
+        // Resume
+        prompt.append(resumeText);
+
+        // Interview Type
+        prompt.append("\n\nInterview Type: ")
+                .append(interview.getInterviewType())
+                .append("\n\nInterview Questions and Answers:\n\n");
+
+        // Questions
+        for (InterviewQuestion q : questions) {
+
+            prompt.append("""
+Question:
+%s
+
+Answer:
+%s
+
+Score:
+%s
+
+"""
+                    .formatted(
+                            q.getQuestion(),
+                            q.getAnswer() == null ? "Not Answered" : q.getAnswer(),
+                            q.getScore() == null ? 0 : q.getScore()
+                    ));
+        }
+
+        // Gemini Response
+        String response = geminiService.generateContent(prompt.toString());
+
+        // Remove Markdown
+        response = response
+                .replace("```json", "")
+                .replace("```", "")
+                .trim();
+
+        // Extract JSON
+        int start = response.indexOf("{");
+        int end = response.lastIndexOf("}");
+
+        if (start == -1 || end == -1) {
+            throw new RuntimeException("Invalid Gemini response: " + response);
+        }
+
+        response = response.substring(start, end + 1);
+
+        System.out.println(response);
+
+        // Convert JSON -> DTO
+        try {
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            return mapper.readValue(
+                    response,
+                    ResumeGapAnalysisResponse.class
+            );
+
+        } catch (JsonProcessingException e) {
+
+            throw new RuntimeException(
+                    "Failed to parse Gemini response",
+                    e
+            );
+        }
     }
     @Override
     public void submitAnswer(Long questionId, String answer) {

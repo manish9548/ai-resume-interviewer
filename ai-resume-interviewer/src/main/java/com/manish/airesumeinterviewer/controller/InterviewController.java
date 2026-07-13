@@ -3,6 +3,7 @@ package com.manish.airesumeinterviewer.controller;
 import com.manish.airesumeinterviewer.dto.*;
 import com.manish.airesumeinterviewer.service.InterviewService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -92,4 +93,13 @@ public class InterviewController {
     ){
         return interviewService.getOverallFeedback(interviewId);
     }
+    @GetMapping("/{interviewId}/resume-gap-analysis")
+    public ResponseEntity<ResumeGapAnalysisResponse> getResumeGapAnalysis(
+            @PathVariable Long interviewId){
+
+        return ResponseEntity.ok(
+                interviewService.getResumeGapAnalysis(interviewId)
+        );
+    }
+
 }

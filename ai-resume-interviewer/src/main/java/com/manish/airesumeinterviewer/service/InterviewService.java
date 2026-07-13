@@ -15,4 +15,5 @@ public interface InterviewService {
     List<InterviewHistoryResponse> getInterviewHistory(String email);
     DashboardResponse getDashboard(String email);
     OverallFeedbackResponse getOverallFeedback(Long interviewId);
+    ResumeGapAnalysisResponse getResumeGapAnalysis(Long interviewId);
 }
