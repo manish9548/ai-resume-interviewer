@@ -16,4 +16,5 @@ public interface InterviewService {
     DashboardResponse getDashboard(String email);
     OverallFeedbackResponse getOverallFeedback(Long interviewId);
     ResumeGapAnalysisResponse getResumeGapAnalysis(Long interviewId);
+    RoadmapResponse getLearningRoadmap(Long interviewId);
 }

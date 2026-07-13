@@ -310,6 +310,151 @@ Score:
         }
     }
     @Override
+    public RoadmapResponse getLearningRoadmap(Long interviewId) {
+
+        Interview interview = interviewRepository.findById(interviewId)
+                .orElseThrow(() -> new RuntimeException("Interview not found"));
+
+        User user = interview.getUser();
+
+        Resume resume = resumeRepository.findTopByUserOrderByUploadedAtDesc(user)
+                .orElseThrow(() -> new RuntimeException("Resume not found"));
+
+        String resumeText = resume.getExtractedText();
+
+        if (resumeText == null || resumeText.isBlank()) {
+            throw new RuntimeException("Resume text not found");
+        }
+
+        List<InterviewQuestion> questions =
+                interviewQuestionRepository.findByInterviewIdOrderByQuestionNumber(interviewId);
+
+        if (questions.isEmpty()) {
+            throw new RuntimeException("Interview questions not found");
+        }
+
+        StringBuilder prompt = new StringBuilder();
+
+        prompt.append("""
+You are an expert Java mentor, technical interviewer, and career coach.
+
+Analyze the candidate's Resume and Interview Performance.
+
+Your task is to generate a personalized 30-Day Learning Roadmap.
+
+The roadmap should focus on:
+
+1. Weak topics found during the interview.
+2. Skills missing from the interview.
+3. Resume strengths that should be improved further.
+4. Interview preparation.
+5. Small practical tasks.
+6. Gradually increase the difficulty every week.
+
+IMPORTANT:
+
+Return ONLY valid JSON.
+
+Do NOT use markdown.
+
+Do NOT wrap the response inside ```json or ```.
+
+Do NOT write any explanation.
+
+Return exactly in this format:
+
+{
+  "roadmapTitle":"30-Day Java Learning Roadmap",
+  "week1":[
+    "Task 1",
+    "Task 2",
+    "Task 3"
+  ],
+  "week2":[
+    "Task 1",
+    "Task 2",
+    "Task 3"
+  ],
+  "week3":[
+    "Task 1",
+    "Task 2",
+    "Task 3"
+  ],
+  "week4":[
+    "Task 1",
+    "Task 2",
+    "Task 3"
+  ]
+}
+
+Resume:
+
+""");
+
+        prompt.append(resumeText);
+
+        prompt.append("""
+
+Interview Type:
+""")
+                .append(interview.getInterviewType())
+                .append("""
+
+Interview Questions and Answers:
+
+""");
+
+        for (InterviewQuestion q : questions) {
+
+            prompt.append("""
+Question:
+%s
+
+Answer:
+%s
+
+Score:
+%s
+
+"""
+                    .formatted(
+                            q.getQuestion(),
+                            q.getAnswer(),
+                            q.getScore()
+                    ));
+        }
+
+        String response = geminiService.generateContent(prompt.toString());
+
+        response = response
+                .replace("```json", "")
+                .replace("```", "")
+                .trim();
+
+        int start = response.indexOf("{");
+        int end = response.lastIndexOf("}");
+
+        if (start == -1 || end == -1) {
+            throw new RuntimeException("Invalid Gemini response: " + response);
+        }
+
+        response = response.substring(start, end + 1);
+
+        System.out.println(response);
+
+        try {
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            return mapper.readValue(response, RoadmapResponse.class);
+
+        } catch (JsonProcessingException e) {
+
+            throw new RuntimeException("Failed to parse Gemini response", e);
+
+        }
+    }
+    @Override
     public void submitAnswer(Long questionId, String answer) {
 
         InterviewQuestion question = interviewQuestionRepository.findById(questionId)

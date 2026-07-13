@@ -101,5 +101,13 @@ public class InterviewController {
                 interviewService.getResumeGapAnalysis(interviewId)
         );
     }
+    @GetMapping("/{interviewId}/roadmap")
+    public ResponseEntity<RoadmapResponse> getLearningRoadmap(
+            @PathVariable Long interviewId){
+
+        return ResponseEntity.ok(
+                interviewService.getLearningRoadmap(interviewId)
+        );
+    }
 
 }
