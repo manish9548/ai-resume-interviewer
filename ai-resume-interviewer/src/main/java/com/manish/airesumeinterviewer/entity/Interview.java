@@ -19,9 +19,13 @@ public class Interview {
 
     private String interviewType;
 
+    private String company;
+
     private Integer overallScore;
 
     private String status;
+
+
 
     private LocalDateTime createdAt;
 

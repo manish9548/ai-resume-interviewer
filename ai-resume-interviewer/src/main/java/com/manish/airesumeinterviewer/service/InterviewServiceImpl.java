@@ -88,6 +88,7 @@ public class InterviewServiceImpl implements InterviewService {
                 .map(interview -> InterviewHistoryResponse.builder()
                         .interviewId(interview.getId())
                         .interviewType(interview.getInterviewType())
+                        .company(interview.getCompany())
                         .totalScore(interview.getOverallScore())
                         .percentage(
                                 interview.getOverallScore() == null
@@ -629,53 +630,103 @@ Score:
     }
 
     @Override
-    public String startInterview(String type, String email) {
+    public String startInterview(
+            StartInterviewRequest request,
+            String email) {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        Resume resume = resumeRepository.findTopByUserOrderByUploadedAtDesc(user)
+                .orElseThrow(() -> new RuntimeException("Resume not found"));
+
+        String resumeText = resume.getExtractedText();
+
+        if (resumeText == null || resumeText.isBlank()) {
+            throw new RuntimeException("Resume text not found");
+        }
+
         String prompt = """
-                You are an expert interviewer.
+You are an experienced technical interviewer working at %s.
 
-                Generate exactly 10 interview questions.
+Generate exactly 10 interview questions.
 
-                Interview Type: %s
+Interview Type:
+%s
 
-                Return ONLY a JSON array.
+Target Company:
+%s
 
-                Example:
+Rules:
 
-                [
-                  "What is Java?",
-                  "Explain OOP.",
-                  "What is JVM?"
-                ]
+- Questions must match the interview style of %s.
+- Difficulty should be appropriate for freshers.
+- Cover important topics of the selected interview type.
+- Do not ask MCQs.
+- Do not repeat questions.
 
-                Rules:
-                - Return exactly 10 questions.
-                - No numbering.
-                - No markdown.
-                - No explanation.
-                - No ```json.
-                - Return valid JSON only.
-                """.formatted(type);
+IMPORTANT:
+
+Return ONLY a valid JSON array.
+
+Example:
+
+[
+  "What is JVM?",
+  "Explain the difference between HashMap and ConcurrentHashMap.",
+  "What is Dependency Injection?"
+]
+
+Do NOT number the questions.
+Do NOT use markdown.
+Do NOT wrap the response inside ```json or ```.
+Do NOT write any explanation.
+Return exactly 10 questions.
+
+Resume:
+
+%s
+""".formatted(
+                request.getCompany(),
+                request.getInterviewType(),
+                request.getCompany(),
+                request.getCompany(),
+                resumeText
+        );
 
         String response = geminiService.generateContent(prompt);
+
+        System.out.println("========== GEMINI RESPONSE ==========");
+        System.out.println(response);
+        System.out.println("=====================================");
+
+        response = response
+                .replace("```json", "")
+                .replace("```", "")
+                .trim();
 
         List<String> questionList;
 
         try {
-            questionList = objectMapper.readValue(
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            questionList = mapper.readValue(
                     response,
                     new TypeReference<List<String>>() {
-                    }
-            );
+                    });
+
         } catch (Exception e) {
-            throw new RuntimeException("Failed to parse Gemini response", e);
+
+            throw new RuntimeException(
+                    "Failed to parse Gemini response:\n" + response,
+                    e
+            );
         }
 
         Interview interview = Interview.builder()
-                .interviewType(type)
+                .interviewType(request.getInterviewType())
+                .company(request.getCompany())
                 .status("IN_PROGRESS")
                 .createdAt(LocalDateTime.now())
                 .user(user)
@@ -699,10 +750,9 @@ Score:
 
         interviewQuestionRepository.saveAll(interviewQuestions);
 
-        try {
-            return objectMapper.writeValueAsString(questionList);
-        } catch (Exception e) {
-            return response;
-        }
+        return "Interview Started Successfully. Interview ID: " + interview.getId();
     }
+
+
+
 }

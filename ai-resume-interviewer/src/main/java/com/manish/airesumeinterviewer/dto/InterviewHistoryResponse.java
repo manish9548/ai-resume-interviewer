@@ -17,6 +17,8 @@ public class InterviewHistoryResponse {
 
     private String interviewType;
 
+    private String company;
+
     private Integer totalScore;
 
     private Double percentage;

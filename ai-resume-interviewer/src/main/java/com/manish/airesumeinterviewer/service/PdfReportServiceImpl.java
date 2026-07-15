@@ -95,6 +95,9 @@ public class PdfReportServiceImpl implements PdfReportService {
             document.add(new Paragraph(
                     "Candidate Name : " + interview.getUser().getFullName(),
                     normalFont));
+            document.add(new Paragraph(
+                    "Company : " + interview.getCompany(),
+                    normalFont));
 
             document.add(new Paragraph(
                     "Interview Type : " + interview.getInterviewType(),

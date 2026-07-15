@@ -22,5 +22,7 @@ public class InterviewReportResponse {
 
     private String status;
 
+    private String company;
+
     private List<InterviewReportQuestion> questions;
 }

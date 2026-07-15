@@ -35,16 +35,14 @@ public class InterviewController {
 
     }
 
-
-
     @PostMapping("/start")
     public String startInterview(
-            @RequestParam String type,
+            @RequestBody StartInterviewRequest request,
             Authentication authentication
     ) {
 
         return interviewService.startInterview(
-                type,
+                request,
                 authentication.getName()
         );
     }

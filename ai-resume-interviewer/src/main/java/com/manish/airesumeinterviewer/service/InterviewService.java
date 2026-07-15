@@ -5,7 +5,10 @@ import com.manish.airesumeinterviewer.dto.*;
 import java.util.List;
 
 public interface InterviewService {
-    String startInterview(String type, String email);
+    String startInterview(
+            StartInterviewRequest request,
+            String email
+    );
     List<InterviewQuestionResponse> getInterviewQuestions(Long interviewId);
     void submitAnswer(Long questionId, String answer);
     InterviewResultResponse finishInterview(Long interviewId);
