@@ -2,7 +2,11 @@ package com.manish.airesumeinterviewer.controller;
 
 import com.manish.airesumeinterviewer.dto.*;
 import com.manish.airesumeinterviewer.service.InterviewService;
+import com.manish.airesumeinterviewer.service.PdfReportService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +19,21 @@ import java.util.List;
 public class InterviewController {
 
     private final InterviewService interviewService;
+    @Autowired
+    private PdfReportService pdfReportService;
+    @GetMapping("/{interviewId}/report/pdf")
+    public ResponseEntity<byte[]> downloadReport(
+            @PathVariable Long interviewId) {
+
+        byte[] pdf = pdfReportService.generateInterviewReport(interviewId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=Interview_Report.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+
+    }
 
 
 
