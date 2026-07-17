@@ -1,5 +1,5 @@
 package com.manish.airesumeinterviewer.config;
-
+import org.springframework.security.config.Customizer;
 import com.manish.airesumeinterviewer.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +31,7 @@ public class SecurityConfig {
             throws Exception {
 
         http
+                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
 
                 .sessionManagement(session ->
