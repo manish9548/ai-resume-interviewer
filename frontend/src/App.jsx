@@ -11,6 +11,7 @@ import Interview from "./pages/Interview";
 import Result from "./pages/Result";
 import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ResumeAnalysis from "./pages/ResumeAnalysis";
 
 function App() {
 
@@ -36,7 +37,10 @@ function App() {
 
             <Route path="/resume/upload" element={<ResumeUpload />} />
 
+
             <Route path="/resume/history" element={<ResumeHistory />} />
+
+            <Route path="/resume/analysis" element={<ResumeAnalysis />}/>
 
             <Route path="/interview/start" element={<StartInterview />} />
 

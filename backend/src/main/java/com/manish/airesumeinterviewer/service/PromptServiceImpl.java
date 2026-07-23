@@ -5,33 +5,46 @@ import org.springframework.stereotype.Service;
 @Service
 public class PromptServiceImpl implements PromptService {
 
-
     @Override
     public String getResumeAnalysisPrompt(String resumeText) {
 
         return """
-                You are an expert ATS Resume Reviewer.
+You are an expert ATS Resume Reviewer.
 
-                Analyze the following resume carefully.
+Analyze the resume carefully.
 
-                Return the response in the following format:
+Give score out of 100.
 
-                1. Professional Summary
+Identify strengths.
 
-                2. Technical Skills
+Identify weaknesses.
 
-                3. Strengths
+Identify missing technical skills.
 
-                4. Weaknesses
+Give practical suggestions.
 
-                5. Missing Skills
+IMPORTANT RULES:
 
-                6. ATS Score (0-100)
+1. Return ONLY valid JSON.
+2. Do NOT return Markdown.
+3. Do NOT use ```json.
+4. Do NOT explain anything.
+5. Do NOT write text before or after JSON.
 
-                7. Top 10 Technical Interview Questions
+Return this exact structure:
 
-                Resume:
+{
+  "overallScore": 0,
+  "strengths": [],
+  "weaknesses": [],
+  "missingSkills": [],
+  "suggestions": []
+}
 
-                """ + resumeText;
+Resume:
+
+""" + resumeText;
+
     }
+
 }

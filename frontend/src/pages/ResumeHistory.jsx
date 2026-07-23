@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
-import { analyzeResume, getResumeHistory } from "../services/resumeService";
+import { useNavigate } from "react-router-dom";
+import {
+    analyzeResume,
+    getResumeHistory,
+} from "../services/resumeService";
 import ResumeHistoryCard from "../components/ResumeHistoryCard";
 
 function ResumeHistory() {
+
+    const navigate = useNavigate();
 
     const [resumes, setResumes] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-
         loadHistory();
-
     }, []);
 
     const loadHistory = async () => {
@@ -25,6 +29,8 @@ function ResumeHistory() {
 
             console.log(error);
 
+            alert("Failed to load resume history.");
+
         } finally {
 
             setLoading(false);
@@ -35,31 +41,42 @@ function ResumeHistory() {
 
     const handleAnalyze = async () => {
 
-        try {
+    try {
 
-            const response = await analyzeResume();
+        const analysis = await analyzeResume();
 
-            alert(response);
+        console.log("Analysis Data:", analysis);
+        console.log("Type:", typeof analysis);
 
-        } catch (error) {
+        navigate("/resume/analysis", {
+            state: {
+                analysis,
+            },
+        });
 
-            console.log(error);
+    } catch (error) {
 
-            alert("Analysis Failed");
+        console.log(error);
 
-        }
+        alert("Resume Analysis Failed");
 
-    };
+    }
+
+};
 
     if (loading) {
 
         return (
 
-            <h1 className="text-center text-3xl mt-20">
+            <div className="min-h-screen flex justify-center items-center">
 
-                Loading...
+                <h1 className="text-3xl font-bold">
 
-            </h1>
+                    Loading...
+
+                </h1>
+
+            </div>
 
         );
 
@@ -78,17 +95,24 @@ function ResumeHistory() {
                 </h1>
 
                 {
+
                     resumes.length === 0 ?
 
                         (
 
-                            <div className="bg-white rounded-xl p-10 text-center">
+                            <div className="bg-white rounded-xl shadow p-10 text-center">
 
-                                <h2 className="text-2xl font-bold">
+                                <h2 className="text-3xl font-bold">
 
                                     No Resume Uploaded Yet
 
                                 </h2>
+
+                                <p className="text-gray-500 mt-3">
+
+                                    Upload your first resume to start AI analysis.
+
+                                </p>
 
                             </div>
 

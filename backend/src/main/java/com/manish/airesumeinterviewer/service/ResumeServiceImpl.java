@@ -42,7 +42,13 @@ public class ResumeServiceImpl implements ResumeService {
 
         String prompt = promptService.getResumeAnalysisPrompt(extractedText);
 
-        return geminiService.generateContent(prompt);
+        String response = geminiService.generateContent(prompt);
+
+        System.out.println("====================================");
+        System.out.println(response);
+        System.out.println("====================================");
+
+        return response;
     }
     @Override
     public List<ResumeHistoryResponse> getResumeHistory(String email) {
