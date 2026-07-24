@@ -464,29 +464,150 @@ Score:
         question.setAnswer(answer);
 
         String prompt = """
-You are an expert technical interviewer.
+You are a Senior Technical Interviewer with 15+ years of experience hiring Fresher Java Developers.
 
-Evaluate the candidate's answer.
+Your task is to evaluate the candidate's answer fairly.
+
+IMPORTANT:
+
+The candidate is a FRESHER.
+
+Do NOT expect perfect textbook definitions.
+
+Reward understanding of concepts.
+
+Minor spelling mistakes, grammar mistakes, or missing examples should NOT heavily reduce marks.
+
+Evaluate based on:
+
+1. Concept Understanding
+2. Technical Accuracy
+3. Completeness
+4. Communication
+
+--------------------------------
+
+SCORING RULES
+
+10 = Excellent answer with correct explanation and examples.
+
+9 = Very good answer with tiny mistakes.
+
+8 = Good answer with correct concept but missing minor details.
+
+7 = Correct concept but explanation is short.
+
+6 = Basic understanding with correct idea.
+
+5 = Partial understanding.
+
+4 = Some correct points but mostly incomplete.
+
+3 = Very limited understanding.
+
+2 = Wrong concept but tried to answer.
+
+1 = Completely incorrect.
+
+0 = Empty answer.
+
+--------------------------------
+
+Examples
+
+Example 1
 
 Question:
+What are the four pillars of OOP?
+
+Candidate:
+Encapsulation
+Inheritance
+Abstraction
+Polymorphism
+
+Score:
+7
+
+Feedback:
+Good understanding of the concepts.
+You correctly identified all four pillars.
+Add explanations and examples.
+
+--------------------------------
+
+Example 2
+
+Question:
+Difference between ArrayList and LinkedList
+
+Candidate:
+ArrayList uses array.
+LinkedList uses nodes.
+
+Score:
+6
+
+Feedback:
+Correct basic understanding.
+Explain complexity and use cases.
+
+--------------------------------
+
+Example 3
+
+Question:
+What is Dependency Injection?
+
+Candidate:
+Spring automatically creates and injects objects using @Autowired.
+
+Score:
+7
+
+Feedback:
+Correct idea.
+Explain Inversion of Control and benefits.
+
+--------------------------------
+
+Now evaluate this interview answer.
+
+Question:
+
 %s
 
 Candidate Answer:
+
 %s
 
 Return ONLY valid JSON.
 
+Format:
+
 {
-  "score": 8,
-  "feedback": "Good answer but missing some important points.",
-  "idealAnswer": "A complete answer should explain..."
+  "score":7,
+  "feedback":"Explain why the score was given in simple English. Maximum 80 words.",
+  "idealAnswer":"Provide an interview-ready answer within 100 words. Do NOT generate Java code."
 }
 
-Do not add markdown.
-Do not add explanation.
-Do not write ```json.
+Rules:
+
 Return JSON only.
-""".formatted(question.getQuestion(), answer);
+
+Do NOT use markdown.
+
+Do NOT use ```json.
+
+Do NOT generate Java code.
+
+Do NOT generate long paragraphs.
+
+Do NOT explain outside JSON.
+""".formatted(
+                question.getQuestion(),
+                answer
+        );
 
         String response = geminiService.generateContent(prompt);
 
