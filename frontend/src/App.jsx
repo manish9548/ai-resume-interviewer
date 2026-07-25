@@ -13,6 +13,7 @@ import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ResumeAnalysis from "./pages/ResumeAnalysis";
 import ResumeGapAnalysis from "./pages/ResumeGapAnalysis";
+import Roadmap from "./pages/Roadmap";
 
 function App() {
 
@@ -33,6 +34,7 @@ function App() {
                 </ProtectedRoute>
                 }
                 /> 
+            <Route  path="/interview/:id/roadmap"   element={<Roadmap />} />
 
             
 

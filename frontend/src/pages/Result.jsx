@@ -289,18 +289,24 @@ function Result() {
                         Dashboard
                     </button>
                     <button
+                        onClick={() => navigate(`/interview/${id}/roadmap`)}
+                        className="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700"
+                    >
+                        📚 Learning Roadmap
+                    </button>
+                    <button
 
                         onClick={() =>
                             navigate(`/interview/${id}/resume-gap-analysis`)
-                            }
+                        }
 
                         className="bg-green-600 text-white px-8 py-3 rounded-lg"
 
-                            >
+                    >
 
-                                Resume Gap Analysis
+                        Resume Gap Analysis
 
-                        </button>
+                    </button>
 
                 </div>
 
