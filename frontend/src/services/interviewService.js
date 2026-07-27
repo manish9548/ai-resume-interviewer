@@ -10,6 +10,10 @@ export const startInterview = async (data) => {
     return response.data;
 
 };
+export const getDashboard = async () => {
+    const response = await api.get("/interview/dashboard");
+    return response.data;
+};
 
 export const getInterviewQuestions = async (interviewId) => {
 
