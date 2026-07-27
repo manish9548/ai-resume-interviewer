@@ -14,6 +14,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ResumeAnalysis from "./pages/ResumeAnalysis";
 import ResumeGapAnalysis from "./pages/ResumeGapAnalysis";
 import Roadmap from "./pages/Roadmap";
+import InterviewHistory from "./pages/InterviewHistory";
 
 function App() {
 
@@ -45,6 +46,10 @@ function App() {
 
             <Route path="/resume/analysis" element={<ResumeAnalysis />}/>
             <Route path="/interview/:id/resume-gap-analysis" element={<ResumeGapAnalysis />}/>
+            <Route
+    path="/interview/history"
+    element={<InterviewHistory />}
+/>
 
             <Route path="/interview/start" element={<StartInterview />} />
 

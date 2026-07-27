@@ -176,6 +176,12 @@ function Dashboard() {
                             <FaUpload className="inline mr-2" />
                             Upload Resume
                         </Button>
+                        <Button
+    onClick={() => navigate("/interview/history")}
+    className="py-5 text-lg"
+>
+    Interview History
+</Button>
 
                         <Button
                             onClick={() => navigate("/interview/start")}

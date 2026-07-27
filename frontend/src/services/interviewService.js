@@ -15,6 +15,11 @@ export const getDashboard = async () => {
     return response.data;
 };
 
+export const getInterviewHistory = async () => {
+    const response = await api.get("/interview/history");
+    return response.data;
+};
+
 export const getInterviewQuestions = async (interviewId) => {
 
     const response = await api.get(
