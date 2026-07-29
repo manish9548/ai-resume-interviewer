@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/axiosConfig";
+import { downloadPdfReport } from "../services/interviewService";
 
 function Result() {
 
@@ -39,6 +40,33 @@ function Result() {
         }
 
     };
+    const handleDownloadPdf = async () => {
+
+    try {
+
+        const pdf = await downloadPdfReport(id);
+
+        const url = window.URL.createObjectURL(pdf);
+
+        const link = document.createElement("a");
+
+        link.href = url;
+
+        link.download = "Interview_Report.pdf";
+
+        link.click();
+
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+
+        console.log(error);
+
+        alert("Failed to download report.");
+
+    }
+
+};
 
     if (loading) {
 
@@ -283,11 +311,18 @@ function Result() {
                 <div className="flex gap-4 mt-8">
 
                     <button
-                        onClick={() => navigate("/dashboard")}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg"
-                    >
-                        Dashboard
-                    </button>
+        onClick={() => navigate("/dashboard")}
+        className="bg-blue-600 text-white px-8 py-3 rounded-lg"
+    >
+        Dashboard
+    </button>
+
+    <button
+        onClick={handleDownloadPdf}
+        className="bg-red-600 text-white px-8 py-3 rounded-lg"
+    >
+        Download PDF
+    </button>
                     <button
                         onClick={() => navigate(`/interview/${id}/roadmap`)}
                         className="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700"

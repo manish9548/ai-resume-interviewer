@@ -14,6 +14,17 @@ export const getDashboard = async () => {
     const response = await api.get("/interview/dashboard");
     return response.data;
 };
+export const downloadPdfReport = async (id) => {
+
+    const response = await api.get(
+        `/interview/${id}/report/pdf`,
+        {
+            responseType: "blob",
+        }
+    );
+
+    return response.data;
+};
 
 export const getInterviewHistory = async () => {
     const response = await api.get("/interview/history");
