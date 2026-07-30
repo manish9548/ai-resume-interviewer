@@ -10,6 +10,8 @@ function StartInterview() {
 
     const [interviewType, setInterviewType] = useState("Java Developer");
 
+    const [interviewMode, setInterviewMode] = useState("TEXT");
+
     const [loading, setLoading] = useState(false);
 
     const handleStart = async () => {
@@ -39,7 +41,15 @@ function StartInterview() {
 
             const interviewId = response.data.split(":")[1].trim();
 
-            navigate(`/interview/${interviewId}`);
+            if (interviewMode === "TEXT") {
+
+                navigate(`/interview/${interviewId}`);
+
+            } else {
+
+                navigate(`/interview/voice/${interviewId}`);
+
+            }
 
         } catch (error) {
 
@@ -47,9 +57,11 @@ function StartInterview() {
 
             alert("Unable to start interview.");
 
-        }
+        } finally {
 
-        setLoading(false);
+            setLoading(false);
+
+        }
 
     };
 
@@ -61,9 +73,11 @@ function StartInterview() {
 
                 <h1 className="text-4xl font-bold text-center mb-8">
 
-                    AI Interview
+                    🤖 AI Interview
 
                 </h1>
+
+                {/* Company */}
 
                 <div className="mb-6">
 
@@ -79,7 +93,7 @@ function StartInterview() {
 
                         value={company}
 
-                        onChange={(e)=>setCompany(e.target.value)}
+                        onChange={(e) => setCompany(e.target.value)}
 
                         placeholder="Google"
 
@@ -89,7 +103,9 @@ function StartInterview() {
 
                 </div>
 
-                <div className="mb-8">
+                {/* Interview Type */}
+
+                <div className="mb-6">
 
                     <label className="font-semibold">
 
@@ -101,7 +117,7 @@ function StartInterview() {
 
                         value={interviewType}
 
-                        onChange={(e)=>setInterviewType(e.target.value)}
+                        onChange={(e) => setInterviewType(e.target.value)}
 
                         className="w-full border rounded-lg p-3 mt-2"
 
@@ -123,13 +139,49 @@ function StartInterview() {
 
                 </div>
 
+                {/* Interview Mode */}
+
+                <div className="mb-8">
+
+                    <label className="font-semibold">
+
+                        Interview Mode
+
+                    </label>
+
+                    <select
+
+                        value={interviewMode}
+
+                        onChange={(e) => setInterviewMode(e.target.value)}
+
+                        className="w-full border rounded-lg p-3 mt-2"
+
+                    >
+
+                        <option value="TEXT">
+
+                            📝 Text Interview
+
+                        </option>
+
+                        <option value="VOICE">
+
+                            🎤 Voice Interview
+
+                        </option>
+
+                    </select>
+
+                </div>
+
                 <button
 
                     onClick={handleStart}
 
                     disabled={loading}
 
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg"
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
 
                 >
 
@@ -137,13 +189,9 @@ function StartInterview() {
 
                         loading
 
-                        ?
+                            ? "Generating Questions..."
 
-                        "Generating Questions..."
-
-                        :
-
-                        "Start Interview"
+                            : "Start Interview"
 
                     }
 

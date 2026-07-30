@@ -15,6 +15,7 @@ import ResumeAnalysis from "./pages/ResumeAnalysis";
 import ResumeGapAnalysis from "./pages/ResumeGapAnalysis";
 import Roadmap from "./pages/Roadmap";
 import InterviewHistory from "./pages/InterviewHistory";
+import VoiceInterview from "./pages/VoiceInterview";
 
 function App() {
 
@@ -22,7 +23,7 @@ function App() {
 
         <Routes>
             <Route path="/" element={<LandingPage />} />
-            
+
             <Route path="/" element={<Login />} />
 
             <Route path="/login" element={<Login />} />
@@ -33,23 +34,27 @@ function App() {
                 <ProtectedRoute>
                     <Dashboard />
                 </ProtectedRoute>
-                }
-                /> 
-            <Route  path="/interview/:id/roadmap"   element={<Roadmap />} />
+            }
+            />
+            <Route path="/interview/:id/roadmap" element={<Roadmap />} />
 
-            
+
 
             <Route path="/resume/upload" element={<ResumeUpload />} />
 
 
             <Route path="/resume/history" element={<ResumeHistory />} />
 
-            <Route path="/resume/analysis" element={<ResumeAnalysis />}/>
-            <Route path="/interview/:id/resume-gap-analysis" element={<ResumeGapAnalysis />}/>
+            <Route path="/resume/analysis" element={<ResumeAnalysis />} />
+            <Route path="/interview/:id/resume-gap-analysis" element={<ResumeGapAnalysis />} />
             <Route
-    path="/interview/history"
-    element={<InterviewHistory />}
-/>
+                path="/interview/history"
+                element={<InterviewHistory />}
+            />
+            <Route
+                path="/interview/voice/:id"
+                element={<VoiceInterview />}
+            />
 
             <Route path="/interview/start" element={<StartInterview />} />
 
