@@ -1,30 +1,62 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import api from "../utils/axiosConfig";
 
 function VoiceInterview() {
 
     const { id } = useParams();
+
     const navigate = useNavigate();
 
+    const recognitionRef = useRef(null);
+
+    const countdownRef = useRef(null);
+
+    const silenceTimerRef = useRef(null);
+
     const [questions, setQuestions] = useState([]);
+
     const [currentQuestion, setCurrentQuestion] = useState(0);
 
     const [transcript, setTranscript] = useState("");
+
     const [listening, setListening] = useState(false);
+
     const [processing, setProcessing] = useState(false);
 
+    const [timeLeft, setTimeLeft] = useState(30);
+
     useEffect(() => {
+
         loadQuestions();
+
+        return () => {
+
+            window.speechSynthesis.cancel();
+
+            if (recognitionRef.current) {
+
+                recognitionRef.current.stop();
+
+            }
+
+            clearInterval(countdownRef.current);
+
+            clearTimeout(silenceTimerRef.current);
+
+        };
+
     }, []);
 
     useEffect(() => {
 
-        if (questions.length > 0) {
+        if (questions.length === 0) return;
 
-            speakQuestion(questions[currentQuestion].question);
+        speakQuestion(
+            questions[currentQuestion].question
+        );
 
-        }
+        startCountdown();
 
     }, [questions, currentQuestion]);
 
@@ -46,6 +78,34 @@ function VoiceInterview() {
 
     };
 
+    const startCountdown = () => {
+
+        clearInterval(countdownRef.current);
+
+        setTimeLeft(30);
+
+        countdownRef.current = setInterval(() => {
+
+            setTimeLeft(prev => {
+
+                if (prev <= 1) {
+
+                    clearInterval(countdownRef.current);
+
+                    handleTimeUp();
+
+                    return 0;
+
+                }
+
+                return prev - 1;
+
+            });
+
+        }, 1000);
+
+    };
+
     const speakQuestion = (text) => {
 
         if (!text) return;
@@ -54,8 +114,10 @@ function VoiceInterview() {
 
         const speech = new SpeechSynthesisUtterance(text);
 
-        speech.lang = "en-US";
+        speech.lang = "en-IN";
+
         speech.rate = 1;
+
         speech.pitch = 1;
 
         speech.onend = () => {
@@ -64,15 +126,14 @@ function VoiceInterview() {
 
                 startListening();
 
-            }, 800);
+            }, 700);
 
         };
 
         window.speechSynthesis.speak(speech);
 
     };
-
-    const startListening = () => {
+        const startListening = () => {
 
         const SpeechRecognition =
             window.SpeechRecognition ||
@@ -86,11 +147,22 @@ function VoiceInterview() {
 
         }
 
-        const recognition = new SpeechRecognition();
+        if (recognitionRef.current) {
+
+            recognitionRef.current.stop();
+
+        }
+
+        recognitionRef.current = new SpeechRecognition();
+
+        const recognition = recognitionRef.current;
 
         recognition.lang = "en-IN";
+
         recognition.interimResults = false;
+
         recognition.maxAlternatives = 1;
+
         recognition.continuous = false;
 
         setListening(true);
@@ -99,13 +171,15 @@ function VoiceInterview() {
 
         recognition.onresult = async (event) => {
 
-            recognition.stop();
+            clearInterval(countdownRef.current);
 
             const text = event.results[0][0].transcript;
 
-            console.log("Speech:", text);
+            console.log("Recognized:", text);
 
             setTranscript(text);
+
+            recognition.stop();
 
             await submitAnswer(text);
 
@@ -127,32 +201,60 @@ function VoiceInterview() {
 
     };
 
+    const handleTimeUp = async () => {
+
+        if (processing) return;
+
+        if (recognitionRef.current) {
+
+            recognitionRef.current.stop();
+
+        }
+
+        window.speechSynthesis.cancel();
+
+        await submitAnswer(transcript);
+
+    };
+
     const submitAnswer = async (answerText) => {
 
-        if (!answerText.trim()) return;
+        if (!answerText.trim()) {
+
+            return;
+
+        }
 
         setProcessing(true);
 
         try {
 
-            const questionId = questions[currentQuestion].id;
+            const questionId =
+                questions[currentQuestion].id;
 
             await api.post(
+
                 `/interview/question/${questionId}/answer`,
+
                 {
+
                     answer: answerText
+
                 }
+
             );
 
-            if (currentQuestion < questions.length - 1) {
+            setTranscript("");
 
-                setTranscript("");
+            if (currentQuestion < questions.length - 1) {
 
                 setCurrentQuestion(prev => prev + 1);
 
             } else {
 
-                await api.post(`/interview/${id}/finish`);
+                await api.post(
+                    `/interview/${id}/finish`
+                );
 
                 navigate(`/result/${id}`);
 
@@ -171,8 +273,7 @@ function VoiceInterview() {
         }
 
     };
-
-    return (
+        return (
 
         <div className="min-h-screen bg-gray-100 flex justify-center items-center">
 
@@ -190,7 +291,7 @@ function VoiceInterview() {
 
                         <>
 
-                            <div className="flex justify-between mb-4">
+                            <div className="flex justify-between items-center mb-4">
 
                                 <h2 className="text-xl font-bold">
 
@@ -198,23 +299,23 @@ function VoiceInterview() {
 
                                 </h2>
 
-                                <span>
+                                <span className="text-red-600 font-bold text-xl">
 
-                                    {Math.round(((currentQuestion + 1) / questions.length) * 100)}%
+                                    ⏱ {timeLeft}s
 
                                 </span>
 
                             </div>
 
-                            <div className="w-full bg-gray-300 rounded-full h-3">
+                            <div className="w-full bg-gray-200 rounded-full h-3 mb-8">
 
                                 <div
 
-                                    className="bg-blue-600 h-3 rounded-full"
+                                    className="bg-red-500 h-3 rounded-full transition-all duration-1000"
 
                                     style={{
 
-                                        width: `${((currentQuestion + 1) / questions.length) * 100}%`
+                                        width: `${(timeLeft / 30) * 100}%`
 
                                     }}
 
@@ -222,7 +323,7 @@ function VoiceInterview() {
 
                             </div>
 
-                            <div className="bg-blue-50 rounded-xl p-8 mt-8">
+                            <div className="bg-blue-50 rounded-xl p-8">
 
                                 <p className="text-2xl font-semibold">
 
@@ -242,19 +343,31 @@ function VoiceInterview() {
 
                     <h3 className="text-xl font-bold">
 
-                        Your Speech
+                        🎙 Your Speech
 
                     </h3>
 
-                    <div className="bg-gray-100 rounded-xl p-6 mt-4 min-h-[140px]">
+                    <div className="bg-gray-100 rounded-xl p-6 mt-4 min-h-[140px] flex items-center">
 
                         {
 
                             processing
-                                ? "⏳ Processing your answer..."
-                                : listening
-                                ? "🎤 Listening..."
-                                : transcript || "Waiting for your answer..."
+
+                                ?
+
+                                "⏳ Processing your answer..."
+
+                                :
+
+                                listening
+
+                                    ?
+
+                                    "🎤 Listening..."
+
+                                    :
+
+                                    transcript || "Waiting for your answer..."
 
                         }
 

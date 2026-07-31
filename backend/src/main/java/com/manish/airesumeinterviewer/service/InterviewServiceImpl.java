@@ -461,9 +461,13 @@ Score:
         InterviewQuestion question = interviewQuestionRepository.findById(questionId)
                 .orElseThrow(() -> new RuntimeException("Question not found"));
 
+        // Already answered check
+        if (question.getAnswer() != null) {
+            throw new RuntimeException("Question already answered");
+        }
+
+        // Save only answer
         question.setAnswer(answer);
-
-
 
         interviewQuestionRepository.save(question);
     }
@@ -476,27 +480,133 @@ Score:
         List<InterviewQuestion> questions =
                 interviewQuestionRepository.findByInterviewIdOrderByQuestionNumber(interviewId);
 
-        int totalScore = questions.stream()
-                .mapToInt(q -> q.getScore() == null ? 0 : q.getScore())
-                .sum();
+        StringBuilder prompt = new StringBuilder();
 
-        double percentage = questions.isEmpty()
-                ? 0
-                : (totalScore / (questions.size() * 10.0)) * 100;
+        prompt.append("""
+You are an Expert Java Technical Interviewer.
 
-        interview.setOverallScore(totalScore);
-        interview.setStatus("COMPLETED");
-        interview.setCompletedAt(LocalDateTime.now());
+Evaluate all interview answers together.
 
-        interviewRepository.save(interview);
+Candidate is a fresher.
 
-        return InterviewResultResponse.builder()
-                .interviewId(interviewId)
-                .totalScore(totalScore)
-                .totalQuestions(questions.size())
-                .percentage(percentage)
-                .status(interview.getStatus())
-                .build();
+Return ONLY JSON array.
+
+Format:
+
+[
+  {
+    "questionNumber":1,
+    "score":8,
+    "feedback":"Good answer.",
+    "idealAnswer":"Ideal answer..."
+  }
+]
+
+Rules:
+
+- Score between 0-10
+- Feedback under 50 words
+- Ideal Answer under 80 words
+- Return ONLY JSON
+
+Interview:
+
+""");
+
+        for (InterviewQuestion q : questions) {
+
+            prompt.append("""
+Question Number:
+%s
+
+Question:
+%s
+
+Answer:
+%s
+
+-------------------------
+
+""".formatted(
+                    q.getQuestionNumber(),
+                    q.getQuestion(),
+                    q.getAnswer() == null
+                            ? "Not Answered"
+                            : q.getAnswer()
+            ));
+
+        }
+
+        String response = geminiService.generateContent(prompt.toString());
+
+        response = response
+                .replace("```json", "")
+                .replace("```", "")
+                .trim();
+
+        try {
+
+            List<InterviewEvaluationResponse> evaluations =
+                    objectMapper.readValue(
+                            response,
+                            objectMapper.getTypeFactory()
+                                    .constructCollectionType(
+                                            List.class,
+                                            InterviewEvaluationResponse.class
+                                    )
+                    );
+
+            int totalScore = 0;
+
+            for (InterviewEvaluationResponse evaluation : evaluations) {
+
+                InterviewQuestion question = questions.stream()
+
+                        .filter(q ->
+                                q.getQuestionNumber()
+                                        .equals(evaluation.getQuestionNumber()))
+
+                        .findFirst()
+
+                        .orElseThrow();
+
+                question.setScore(evaluation.getScore());
+                question.setFeedback(evaluation.getFeedback());
+                question.setIdealAnswer(evaluation.getIdealAnswer());
+
+                totalScore += evaluation.getScore();
+
+            }
+
+            interviewQuestionRepository.saveAll(questions);
+
+            double percentage =
+                    (totalScore * 100.0) / (questions.size() * 10);
+
+            interview.setOverallScore(totalScore);
+            interview.setStatus("COMPLETED");
+            interview.setCompletedAt(LocalDateTime.now());
+
+            interviewRepository.save(interview);
+
+            return InterviewResultResponse.builder()
+
+                    .interviewId(interviewId)
+                    .totalScore(totalScore)
+                    .totalQuestions(questions.size())
+                    .percentage(percentage)
+                    .status(interview.getStatus())
+                    .build();
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Failed to parse Gemini Response",
+                    e
+            );
+
+        }
+
     }
     @Override
     public OverallFeedbackResponse getOverallFeedback(Long interviewId) {
