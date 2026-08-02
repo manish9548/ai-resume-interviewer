@@ -48,17 +48,7 @@ function VoiceInterview() {
 
     }, []);
 
-    useEffect(() => {
-
-        if (questions.length === 0) return;
-
-        speakQuestion(
-            questions[currentQuestion].question
-        );
-
-        startCountdown();
-
-    }, [questions, currentQuestion]);
+    
 
     const loadQuestions = async () => {
 
@@ -77,34 +67,45 @@ function VoiceInterview() {
         }
 
     };
+    useEffect(() => {
+
+    if (questions.length > 0) {
+
+        speakQuestion(
+            questions[currentQuestion].question
+        );
+
+    }
+
+}, [questions, currentQuestion]);
 
     const startCountdown = () => {
 
-        clearInterval(countdownRef.current);
+    setTimeLeft(30);
 
-        setTimeLeft(30);
+    clearInterval(countdownRef.current);
 
-        countdownRef.current = setInterval(() => {
+    countdownRef.current = setInterval(() => {
 
-            setTimeLeft(prev => {
+        setTimeLeft((prev) => {
 
-                if (prev <= 1) {
+            if (prev <= 1) {
 
-                    clearInterval(countdownRef.current);
+                clearInterval(countdownRef.current);
 
-                    handleTimeUp();
+                handleTimeUp();
 
-                    return 0;
+                return 0;
 
-                }
+            }
 
-                return prev - 1;
+            return prev - 1;
 
-            });
+        });
 
-        }, 1000);
+    }, 1000);
 
-    };
+};
 
     const speakQuestion = (text) => {
 
@@ -122,13 +123,29 @@ function VoiceInterview() {
 
         speech.onend = () => {
 
-            setTimeout(() => {
+    let count = 3;
 
-                startListening();
+    const countdown = setInterval(() => {
 
-            }, 700);
+        if (count === 0) {
 
-        };
+            clearInterval(countdown);
+
+            startListening();
+
+            startCountdown();
+
+        } else {
+
+            setTranscript(`🎤 Starting in ${count}...`);
+
+            count--;
+
+        }
+
+    }, 1000);
+
+};
 
         window.speechSynthesis.speak(speech);
 
