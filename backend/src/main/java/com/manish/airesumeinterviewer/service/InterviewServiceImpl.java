@@ -466,8 +466,20 @@ Score:
             throw new RuntimeException("Question already answered");
         }
 
-        // Save only answer
-        question.setAnswer(answer);
+        // Empty answer = skipped
+        if (answer == null || answer.trim().isEmpty()) {
+
+            question.setAnswer("");
+
+            question.setSkipped(true);
+
+        } else {
+
+            question.setAnswer(answer.trim());
+
+            question.setSkipped(false);
+
+        }
 
         interviewQuestionRepository.save(question);
     }

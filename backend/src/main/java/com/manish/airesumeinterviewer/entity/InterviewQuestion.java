@@ -35,7 +35,8 @@ public class InterviewQuestion {
 
     private Integer score;
 
-    private Boolean skipped;
+    @Builder.Default
+    private Boolean skipped = false;
 
     @ManyToOne
     @JoinColumn(name = "interview_id")

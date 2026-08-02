@@ -2,17 +2,35 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../utils/axiosConfig";
 
+const ANSWER_TIME = 30;
+const SILENCE_TIME = 10000;
+const ARE_YOU_THERE_TIME = 5000;
+
 function VoiceInterview() {
 
     const { id } = useParams();
 
     const navigate = useNavigate();
 
+    // ==========================
+    // Refs
+    // ==========================
+
     const recognitionRef = useRef(null);
+
+    const transcriptRef = useRef("");
+
+    const timerRef = useRef(null);
+
+    const silenceRef = useRef(null);
 
     const countdownRef = useRef(null);
 
-    const silenceTimerRef = useRef(null);
+    const isSubmittingRef = useRef(false);
+
+    // ==========================
+    // States
+    // ==========================
 
     const [questions, setQuestions] = useState([]);
 
@@ -20,11 +38,19 @@ function VoiceInterview() {
 
     const [transcript, setTranscript] = useState("");
 
+    const [timeLeft, setTimeLeft] = useState(ANSWER_TIME);
+
     const [listening, setListening] = useState(false);
 
     const [processing, setProcessing] = useState(false);
 
-    const [timeLeft, setTimeLeft] = useState(30);
+    const [aiSpeaking, setAiSpeaking] = useState(false);
+
+    const [status, setStatus] = useState("Loading Interview...");
+
+    // ==========================
+    // Initial Load
+    // ==========================
 
     useEffect(() => {
 
@@ -32,23 +58,50 @@ function VoiceInterview() {
 
         return () => {
 
-            window.speechSynthesis.cancel();
-
-            if (recognitionRef.current) {
-
-                recognitionRef.current.stop();
-
-            }
-
-            clearInterval(countdownRef.current);
-
-            clearTimeout(silenceTimerRef.current);
+            cleanup();
 
         };
 
     }, []);
+    useEffect(() => {
 
-    
+    const handler = (e) => {
+
+        e.preventDefault();
+
+        e.returnValue = "";
+
+    };
+
+    window.addEventListener("beforeunload", handler);
+
+    return () => {
+
+        window.removeEventListener("beforeunload", handler);
+
+    };
+
+}, []);
+
+    // ==========================
+    // Speak whenever question changes
+    // ==========================
+
+    useEffect(() => {
+
+        if (questions.length === 0) return;
+
+        resetInterviewState();
+
+        speakQuestion(
+            questions[currentQuestion].question
+        );
+
+    }, [questions, currentQuestion]);
+
+    // ==========================
+    // Load Questions
+    // ==========================
 
     const loadQuestions = async () => {
 
@@ -60,38 +113,150 @@ function VoiceInterview() {
 
             setQuestions(response.data);
 
-        } catch (error) {
+        }
+
+        catch (error) {
 
             console.log(error);
+
+            alert("Unable to load questions.");
 
         }
 
     };
-    useEffect(() => {
 
-    if (questions.length > 0) {
+    // ==========================
+    // Reset State For New Question
+    // ==========================
 
-        speakQuestion(
-            questions[currentQuestion].question
-        );
+    const resetInterviewState = () => {
 
-    }
+        transcriptRef.current = "";
 
-}, [questions, currentQuestion]);
+        setTranscript("");
 
-    const startCountdown = () => {
+        setTimeLeft(ANSWER_TIME);
 
-    setTimeLeft(30);
+        setListening(false);
 
-    clearInterval(countdownRef.current);
+        setProcessing(false);
+
+        setStatus("AI is preparing question...");
+
+        clearInterval(timerRef.current);
+
+        clearTimeout(silenceRef.current);
+
+        clearInterval(countdownRef.current);
+
+    };
+
+    // ==========================
+    // Cleanup
+    // ==========================
+
+    const cleanup = () => {
+
+        window.speechSynthesis.cancel();
+
+        if (recognitionRef.current) {
+
+            recognitionRef.current.stop();
+
+        }
+
+        clearInterval(timerRef.current);
+
+        clearInterval(countdownRef.current);
+
+        clearTimeout(silenceRef.current);
+
+    };
+    // ==========================
+// AI SPEAK QUESTION
+// ==========================
+
+const speakQuestion = (text) => {
+
+    if (!text) return;
+
+    cleanupRecognition();
+
+    window.speechSynthesis.cancel();
+
+    setAiSpeaking(true);
+
+    setStatus("🤖 AI is asking question...");
+
+    const speech = new SpeechSynthesisUtterance(text);
+
+    speech.lang = "en-IN";
+
+    speech.rate = 1;
+
+    speech.pitch = 1;
+
+    speech.volume = 1;
+
+    speech.onend = () => {
+
+        setAiSpeaking(false);
+
+        startCountdown();
+
+    };
+
+    window.speechSynthesis.speak(speech);
+
+};
+
+// ==========================
+// COUNTDOWN
+// ==========================
+
+const startCountdown = () => {
+
+    let count = 3;
+
+    setStatus(`🎤 Starting in ${count}...`);
 
     countdownRef.current = setInterval(() => {
 
-        setTimeLeft((prev) => {
+        count--;
+
+        if (count > 0) {
+
+            setStatus(`🎤 Starting in ${count}...`);
+
+        }
+
+        else {
+
+            clearInterval(countdownRef.current);
+
+            void startListening();
+
+        }
+
+    }, 1000);
+
+};
+
+// ==========================
+// START TIMER
+// ==========================
+
+const startTimer = () => {
+
+    setTimeLeft(ANSWER_TIME);
+
+    timerRef.current = setInterval(() => {
+
+        setTimeLeft(prev => {
 
             if (prev <= 1) {
 
-                clearInterval(countdownRef.current);
+                clearInterval(timerRef.current);
 
                 handleTimeUp();
 
@@ -107,297 +272,693 @@ function VoiceInterview() {
 
 };
 
-    const speakQuestion = (text) => {
+// ==========================
+// START LISTENING
+// ==========================
 
-        if (!text) return;
+const startListening = async () => {
 
-        window.speechSynthesis.cancel();
+    try {
 
-        const speech = new SpeechSynthesisUtterance(text);
+        await navigator.mediaDevices.getUserMedia({
+            audio: true
+        });
 
-        speech.lang = "en-IN";
+    } catch (error) {
 
-        speech.rate = 1;
+        alert("Microphone permission denied.");
 
-        speech.pitch = 1;
+        return;
 
-        speech.onend = () => {
+    }
 
-    let count = 3;
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
 
-    const countdown = setInterval(() => {
+    if (!SpeechRecognition) {
 
-        if (count === 0) {
+        alert("Speech Recognition not supported.");
 
-            clearInterval(countdown);
+        return;
 
-            startListening();
+    }
 
-            startCountdown();
+    cleanupRecognition();
 
-        } else {
+    recognitionRef.current = new SpeechRecognition();
 
-            setTranscript(`🎤 Starting in ${count}...`);
+    const recognition = recognitionRef.current;
 
-            count--;
+    recognition.lang = "en-IN";
+
+    recognition.interimResults = true;
+
+    recognition.continuous = true;
+
+    recognition.maxAlternatives = 1;
+
+    transcriptRef.current = "";
+
+    setTranscript("");
+
+    setListening(true);
+
+    setStatus("🎤 Listening...");
+
+    recognition.start();
+
+    startTimer();
+
+    resetSilenceTimer();
+
+    recognition.onresult = (event) => {
+
+        let text = "";
+
+        for (let i = 0; i < event.results.length; i++) {
+
+            text += event.results[i][0].transcript + " ";
 
         }
 
-    }, 1000);
+        text = text.trim();
 
-};
+        transcriptRef.current = text;
 
-        window.speechSynthesis.speak(speech);
+        setTranscript(text);
 
-    };
-        const startListening = () => {
+        resetSilenceTimer();
 
-        const SpeechRecognition =
-            window.SpeechRecognition ||
-            window.webkitSpeechRecognition;
+        // Voice Commands
 
-        if (!SpeechRecognition) {
+        const lower = text.toLowerCase();
 
-            alert("Speech Recognition is not supported.");
+        if (lower.includes("repeat question")) {
+
+            speakQuestion(
+                questions[currentQuestion].question
+            );
 
             return;
 
         }
 
-        if (recognitionRef.current) {
+        if (lower.includes("skip question")) {
 
-            recognitionRef.current.stop();
+            autoSkip();
+
+            return;
 
         }
 
-        recognitionRef.current = new SpeechRecognition();
-
-        const recognition = recognitionRef.current;
-
-        recognition.lang = "en-IN";
-
-        recognition.interimResults = false;
-
-        recognition.maxAlternatives = 1;
-
-        recognition.continuous = false;
-
-        setListening(true);
-
-        recognition.start();
-
-        recognition.onresult = async (event) => {
-
-            clearInterval(countdownRef.current);
-
-            const text = event.results[0][0].transcript;
-
-            console.log("Recognized:", text);
-
-            setTranscript(text);
+        if (lower.includes("stop interview")) {
 
             recognition.stop();
 
-            await submitAnswer(text);
-
-        };
-
-        recognition.onerror = (event) => {
-
-            console.log("Speech Error:", event.error);
-
-            setListening(false);
-
-        };
-
-        recognition.onend = () => {
-
-            setListening(false);
-
-        };
-
-    };
-
-    const handleTimeUp = async () => {
-
-        if (processing) return;
-
-        if (recognitionRef.current) {
-
-            recognitionRef.current.stop();
-
-        }
-
-        window.speechSynthesis.cancel();
-
-        await submitAnswer(transcript);
-
-    };
-
-    const submitAnswer = async (answerText) => {
-
-        if (!answerText.trim()) {
+            navigate("/dashboard");
 
             return;
 
         }
 
-        setProcessing(true);
+    };
 
-        try {
+    recognition.onerror = (event) => {
 
-            const questionId =
-                questions[currentQuestion].id;
+        console.log("Speech Error:", event.error);
 
-            await api.post(
+        setListening(false);
 
-                `/interview/question/${questionId}/answer`,
+        if (processing) return;
 
-                {
+        switch (event.error) {
 
-                    answer: answerText
+            case "no-speech":
 
-                }
+                setStatus("🤔 I didn't hear anything. Please speak again...");
 
-            );
+                setTimeout(() => {
 
-            setTranscript("");
+                    if (!processing) {
 
-            if (currentQuestion < questions.length - 1) {
+                        void startListening();
 
-                setCurrentQuestion(prev => prev + 1);
+                    }
 
-            } else {
+                }, 1500);
 
-                await api.post(
-                    `/interview/${id}/finish`
-                );
+                break;
 
-                navigate(`/result/${id}`);
+            case "network":
 
-            }
+                setStatus("🌐 Network issue. Retrying...");
 
-        } catch (error) {
+                setTimeout(() => {
 
-            console.log(error);
+                    if (!processing) {
 
-            alert("Failed to submit answer.");
+                        void startListening();
 
-        } finally {
+                    }
 
-            setProcessing(false);
+                }, 2000);
+
+                break;
+
+            case "audio-capture":
+
+                alert("No microphone detected.");
+
+                break;
+
+            case "not-allowed":
+
+                alert("Microphone permission denied.");
+
+                break;
+
+            default:
+
+                console.log(event.error);
 
         }
 
     };
-        return (
 
-        <div className="min-h-screen bg-gray-100 flex justify-center items-center">
+    recognition.onend = () => {
 
-            <div className="bg-white shadow-xl rounded-xl w-full max-w-5xl p-10">
+        setListening(false);
 
-                <h1 className="text-4xl font-bold mb-8">
+        if (!processing && timeLeft > 0) {
 
-                    🎤 AI Voice Interview
+            setTimeout(() => {
 
-                </h1>
+                void startListening();
 
-                {
+            }, 500);
 
-                    questions.length > 0 && (
+        }
 
-                        <>
+    };
 
-                            <div className="flex justify-between items-center mb-4">
+};
 
-                                <h2 className="text-xl font-bold">
+// ==========================
+// CLEAN RECOGNITION
+// ==========================
 
-                                    Question {currentQuestion + 1} / {questions.length}
+const cleanupRecognition = () => {
 
-                                </h2>
+    if (recognitionRef.current) {
 
-                                <span className="text-red-600 font-bold text-xl">
+        recognitionRef.current.onresult = null;
 
-                                    ⏱ {timeLeft}s
+        recognitionRef.current.onerror = null;
 
-                                </span>
+        recognitionRef.current.onend = null;
 
-                            </div>
+        recognitionRef.current.stop();
 
-                            <div className="w-full bg-gray-200 rounded-full h-3 mb-8">
+        recognitionRef.current = null;
 
-                                <div
+    }
 
-                                    className="bg-red-500 h-3 rounded-full transition-all duration-1000"
+};
+// ==========================
+// RESET SILENCE TIMER
+// ==========================
 
-                                    style={{
+const resetSilenceTimer = () => {
 
-                                        width: `${(timeLeft / 30) * 100}%`
+    clearTimeout(silenceRef.current);
 
-                                    }}
+    silenceRef.current = setTimeout(() => {
 
-                                />
+        askAreYouThere();
 
-                            </div>
+    }, SILENCE_TIME);
 
-                            <div className="bg-blue-50 rounded-xl p-8">
+};
 
-                                <p className="text-2xl font-semibold">
+// ==========================
+// ARE YOU THERE
+// ==========================
 
-                                    {questions[currentQuestion].question}
+const askAreYouThere = () => {
 
-                                </p>
+    if (processing) return;
 
-                            </div>
+    cleanupRecognition();
 
-                        </>
+    window.speechSynthesis.cancel();
 
-                    )
+    setListening(false);
 
-                }
+    setStatus("🤖 Are you there?");
 
-                <div className="mt-10">
-
-                    <h3 className="text-xl font-bold">
-
-                        🎙 Your Speech
-
-                    </h3>
-
-                    <div className="bg-gray-100 rounded-xl p-6 mt-4 min-h-[140px] flex items-center">
-
-                        {
-
-                            processing
-
-                                ?
-
-                                "⏳ Processing your answer..."
-
-                                :
-
-                                listening
-
-                                    ?
-
-                                    "🎤 Listening..."
-
-                                    :
-
-                                    transcript || "Waiting for your answer..."
-
-                        }
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
+    const speech = new SpeechSynthesisUtterance(
+        "Are you there?"
     );
+
+    speech.lang = "en-IN";
+
+    speech.onend = () => {
+
+        silenceRef.current = setTimeout(() => {
+
+            autoSkip();
+
+        }, ARE_YOU_THERE_TIME);
+
+    };
+
+    window.speechSynthesis.speak(speech);
+
+};
+
+// ==========================
+// AUTO SKIP
+// ==========================
+
+const autoSkip = async () => {
+
+    if (processing) return;
+
+    setStatus("⏭ Question Skipped");
+
+    await submitAnswer("");
+
+};
+
+// ==========================
+// TIMER FINISHED
+// ==========================
+
+const handleTimeUp = async () => {
+
+    if (processing) return;
+
+    cleanupRecognition();
+
+    clearInterval(timerRef.current);
+
+    clearTimeout(silenceRef.current);
+
+    setListening(false);
+
+    setStatus("⏳ Time Up");
+
+    await submitAnswer(
+        transcriptRef.current
+    );
+
+};
+
+// ==========================
+// SUBMIT ANSWER
+// ==========================
+
+const submitAnswer = async (answerText) => {
+
+    if (isSubmittingRef.current) return;
+
+    isSubmittingRef.current = true;
+
+    setProcessing(true);
+
+    cleanupRecognition();
+
+    clearInterval(timerRef.current);
+
+    clearTimeout(silenceRef.current);
+
+    try {
+
+        const questionId =
+            questions[currentQuestion].id;
+
+        await api.post(
+
+            `/interview/question/${questionId}/answer`,
+
+            {
+
+                answer: answerText
+
+            }
+
+        );
+
+        transcriptRef.current = "";
+
+        setTranscript("");
+
+        if (currentQuestion < questions.length - 1) {
+
+            setCurrentQuestion(prev => prev + 1);
+
+        }
+
+        else {
+
+            setStatus("Generating Result...");
+
+            await api.post(
+                `/interview/${id}/finish`
+            );
+
+            navigate(`/result/${id}`);
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.log(error);
+
+        alert("Failed to submit answer.");
+
+    }
+
+    finally {
+
+        isSubmittingRef.current = false;
+
+        setProcessing(false);
+
+    }
+
+};
+return (
+
+<div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 flex justify-center items-center p-8">
+
+<div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl p-10">
+
+{/* Header */}
+
+<div className="flex justify-between items-center">
+
+<div>
+
+<h1 className="text-4xl font-bold">
+
+🎤 AI Voice Interview
+
+</h1>
+
+<p className="text-gray-500 mt-2">
+
+Company Interview Simulation
+
+</p>
+
+</div>
+
+<div className="text-right">
+
+<div className="text-sm text-gray-500">
+
+Question
+
+</div>
+
+<div className="text-2xl font-bold">
+
+{currentQuestion + 1} / {questions.length}
+
+</div>
+
+</div>
+
+</div>
+
+<hr className="my-8"/>
+
+{/* Progress */}
+
+<div className="mb-8">
+
+<div className="flex justify-between">
+
+<span>Progress</span>
+
+<span>
+
+{Math.round(
+
+((currentQuestion+1)/questions.length)*100
+
+)}%
+
+</span>
+
+</div>
+
+<div className="w-full bg-gray-200 rounded-full h-4 mt-3">
+
+<div
+
+className="bg-blue-600 h-4 rounded-full transition-all duration-700"
+
+style={{
+
+width:
+
+`${((currentQuestion+1)/questions.length)*100}%`
+
+}}
+
+>
+
+</div>
+
+</div>
+
+</div>
+
+{/* Timer */}
+
+<div className="flex justify-center mb-8">
+
+<div className="bg-red-100 px-8 py-3 rounded-full shadow">
+
+<h2 className="text-3xl font-bold text-red-600">
+
+⏱ {timeLeft}s
+
+</h2>
+
+</div>
+
+</div>
+
+{/* AI Question */}
+
+{
+
+questions.length>0 &&
+
+<div className="bg-blue-50 border-l-8 border-blue-600 rounded-xl p-8">
+
+<h2 className="text-blue-700 font-bold text-lg">
+
+🤖 AI Question
+
+</h2>
+
+<p className="text-2xl font-semibold mt-3">
+
+{questions[currentQuestion].question}
+
+</p>
+
+</div>
 
 }
 
-export default VoiceInterview;
+{/* AI Status */}
+
+<div className="mt-8">
+
+<div className="bg-yellow-50 rounded-xl p-5">
+
+<h3 className="font-bold">
+
+AI Status
+
+</h3>
+
+<p className="mt-2 text-xl">
+
+{status}
+
+</p>
+
+</div>
+
+</div>
+
+{/* Listening */}
+
+<div className="mt-8">
+
+<div className="bg-green-50 rounded-xl p-6">
+
+<h3 className="font-bold">
+
+🎙 Your Answer
+
+</h3>
+
+<div className="mt-4 min-h-[120px]">
+
+{
+
+processing
+
+?
+
+<p className="text-orange-600 font-bold">
+
+⏳ Processing...
+
+</p>
+
+:
+
+listening
+
+?
+
+<p className="text-green-600 font-bold animate-pulse">
+
+🎤 Listening...
+
+</p>
+
+:
+
+<p className="text-gray-500">
+
+Waiting...
+
+</p>
+
+}
+
+<p className="mt-4 text-xl">
+
+{
+
+transcript ||
+
+"Start speaking..."
+
+}
+
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+{/* Bottom */}
+
+<div className="grid grid-cols-3 gap-5 mt-10">
+
+<div className="bg-blue-100 rounded-xl p-5">
+
+<h2 className="font-bold">
+
+AI
+
+</h2>
+
+<p>
+
+{
+
+aiSpeaking
+
+?
+
+"🗣 Speaking"
+
+:
+
+"Idle"
+
+}
+
+</p>
+
+</div>
+
+<div className="bg-green-100 rounded-xl p-5">
+
+<h2 className="font-bold">
+
+Mic
+
+</h2>
+
+<p>
+
+{
+
+listening
+
+?
+
+"🎤 ON"
+
+:
+
+"OFF"
+
+}
+
+</p>
+
+</div>
+
+<div className="bg-orange-100 rounded-xl p-5">
+
+<h2 className="font-bold">
+
+Evaluation
+
+</h2>
+
+<p>
+
+{
+
+processing
+
+?
+
+"Running"
+
+:
+
+"Waiting"
+
+}
+
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+);
