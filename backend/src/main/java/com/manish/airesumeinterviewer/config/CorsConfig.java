@@ -3,7 +3,6 @@ package com.manish.airesumeinterviewer.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
-
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
@@ -22,8 +21,8 @@ public class CorsConfig {
         config.setAllowedOrigins(
                 List.of(
                         "http://localhost:5173",
-                        "http://localhost:5174"
-
+                        "http://localhost:5174",
+                        "https://ai-resume-interviewer.vercel.app" // <-- Apna Vercel ka exact live URL yahan add karein
                 )
         );
 
@@ -42,5 +41,4 @@ public class CorsConfig {
 
         return new CorsFilter(source);
     }
-
 }
