@@ -3,20 +3,25 @@ spring:
     name: ai-resume-interviewer
 
   datasource:
-    url: jdbc:mysql://localhost:3306/ai_resume_interviewer
-    username: root
-    password:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?ssl-mode=REQUIRED
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
+
+server:
+  port: ${PORT:8080}
 
 jwt:
-  secret: 1234567890123456789012345678901234567890123456789012345678901234
-  expiration: 86400000
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
+
 file:
-  upload-dir: C:/uploads
+  upload-dir: ${UPLOAD_DIR:uploads}
+
 gemini:
   api:
     key: ${GEMINI_API_KEY}
