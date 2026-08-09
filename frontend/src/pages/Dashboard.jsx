@@ -65,6 +65,15 @@ function Dashboard() {
         );
 
     }
+    if (!dashboard) {
+    return (
+        <div className="min-h-screen flex justify-center items-center">
+            <h1 className="text-2xl font-bold">
+                Failed to load dashboard
+            </h1>
+        </div>
+    );
+}
 
     return (
 
