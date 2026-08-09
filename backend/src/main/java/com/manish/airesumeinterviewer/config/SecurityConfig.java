@@ -1,11 +1,11 @@
 package com.manish.airesumeinterviewer.config;
 
-import org.springframework.security.config.Customizer;
 import com.manish.airesumeinterviewer.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -41,7 +41,20 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+
+                        // Login + Register public
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/register"
+                        ).permitAll()
+
+                        // OPTIONS request public
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
+
+                        // Everything else requires JWT
                         .anyRequest().authenticated()
                 )
 
