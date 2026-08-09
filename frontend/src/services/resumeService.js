@@ -4,9 +4,7 @@ export const uploadResume = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
 
-    // Yahan headers object hata do, Axios multipart/form-data aur boundary khud handle kar lega
     const response = await api.post("/resume/upload", formData);
-
     return response.data;
 };
 
