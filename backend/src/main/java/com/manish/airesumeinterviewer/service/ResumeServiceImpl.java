@@ -86,7 +86,12 @@ public class ResumeServiceImpl implements ResumeService {
                 .orElseThrow(() -> new RuntimeException("User Not Found"));
 
         // Create uploads folder if it doesn't exist
-        File uploadFolder = new File(uploadDir);
+        // Safe absolute path taaki Tomcat temp hash ka koi lafda na rahe
+        String safeDir = (uploadDir == null || uploadDir.isEmpty() || uploadDir.contains("tomcat"))
+                ? System.getProperty("java.io.tmpdir") + File.separator + "uploads"
+                : uploadDir;
+
+        File uploadFolder = new File(safeDir);
 
         if (!uploadFolder.exists()) {
             uploadFolder.mkdirs();
