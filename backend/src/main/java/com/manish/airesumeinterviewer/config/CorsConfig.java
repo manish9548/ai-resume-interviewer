@@ -3,8 +3,8 @@ package com.manish.airesumeinterviewer.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import java.util.List;
 public class CorsConfig {
 
     @Bean
-    public CorsFilter corsFilter() {
+    public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration config = new CorsConfiguration();
 
@@ -22,15 +22,21 @@ public class CorsConfig {
                 List.of(
                         "http://localhost:5173",
                         "http://localhost:5174",
-                        "https://ai-resume-interviewer-git-main-manish9548s-projects.vercel.app" // <-- Apna Vercel ka exact live URL yahan add karein
+                        "https://ai-resume-interviewer-git-main-manish9548s-projects.vercel.app"
+                )
+        );
+
+        config.setAllowedMethods(
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "OPTIONS"
                 )
         );
 
         config.setAllowedHeaders(
-                List.of("*")
-        );
-
-        config.setAllowedMethods(
                 List.of("*")
         );
 
@@ -39,6 +45,6 @@ public class CorsConfig {
 
         source.registerCorsConfiguration("/**", config);
 
-        return new CorsFilter(source);
+        return source;
     }
 }
