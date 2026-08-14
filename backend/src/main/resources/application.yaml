@@ -20,7 +20,7 @@ jwt:
   expiration: ${JWT_EXPIRATION:86400000}
 
 file:
-  upload-dir:${UPLOAD_DIR:/tmp/uploads}
+  upload-dir: ${UPLOAD_DIR:/tmp/uploads}
 
 gemini:
   api:
