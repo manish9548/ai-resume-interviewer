@@ -53,6 +53,8 @@ public class SecurityConfig {
                                 org.springframework.http.HttpMethod.OPTIONS,
                                 "/**"
                         ).permitAll()
+                        // Apne security config ke andar requestMatchers me yeh jod do:
+                        .requestMatchers("/health").permitAll()
 
                         // Everything else requires JWT
                         .anyRequest().authenticated()
